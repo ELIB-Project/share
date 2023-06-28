@@ -93,7 +93,6 @@ Future<Score> loadScore() async {
   final response = await dio.get('/api/v1/user/score');
 
   if (response.statusCode == 200) {
-    print("Data:${response.data}");
     return Score.fromJson(response.data);
   } else {
     throw Exception('Failed to Load');
@@ -109,15 +108,9 @@ Future<List<familyScore>> loadFamilyScore() async {
   final response = await dio.get('/api/v1/family/score');
 
   if (response.statusCode == 200) {
-    print("family Data:${response.data}");
-
-    //오류
-    //familyScore.fromJson(response.data); 
-    //print(familyScore);
     List<dynamic> data = response.data;
     List<familyScore> list = data.map((dynamic e) => familyScore.fromJson(e)).toList();
-    print('data: $data');
-    print('list: $list');
+
     return list;
   } else {
     throw Exception('Failed to Load');
@@ -132,21 +125,6 @@ class testPage extends StatefulWidget {
 }
 
 class _testPageState extends State<testPage> {
-  signTest() async {
-    try {
-      await signIn();
-    } catch (e) {
-      print('error...$e');
-    }
-  }
-  postTest() async {
-    try {
-      await loadScore();
-    } catch (e) {
-      print('error...$e');
-    }
-  }
-  
   late Future<Score> futureScore;
   late Future<List<familyScore>> futureFamilyScore;
 
@@ -232,7 +210,6 @@ class _testPageState extends State<testPage> {
                             return Text('${snapshot.error}');
                             
                             else if(snapshot.hasData){
-                              print('snapshot: ${snapshot.data}');
                               return FamilyScoreBox(
                                 list: snapshot.data,
                               );
@@ -487,7 +464,7 @@ class FamilyScoreBox extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
         child: Padding(
-          padding: EdgeInsets.only(left: 10.0),
+          padding: EdgeInsets.only(left: 10.0, right: 10.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -497,18 +474,80 @@ class FamilyScoreBox extends StatelessWidget {
                 style: TextStyle(
                 color: Colors.grey,
                 fontSize: 15,
+                fontWeight: FontWeight.bold,
                 )),
               ])),
               SizedBox(
-                height: 100,
+                height: 120,
+                width: 400,
                 child: ListView.builder(
                   itemCount: list?.length,
-                  scrollDirection: Axis.vertical,
+                  scrollDirection: Axis.horizontal,
                   itemBuilder: (context, i) {
-                    return Column(
-                      children: [
-                        Text('이름  ${list?[i].name}'),
-                      ],
+                    int scoreColor;
+                    int? score = list?[i].totalScore;
+
+                    if(score != null && score<35) {
+                      scoreColor = 0xFFF93426; //red
+                    } else if(score != null && score<70) {
+                      scoreColor = 0xFFFFDF0E; //yellow
+                    } else {
+                      scoreColor = 0xFF4CAF50; //green
+                    }
+
+                    return Padding(
+                      padding: EdgeInsets.only(right: 5.0),
+                      child: 
+                        Card(
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                          side: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                          ),
+                          borderRadius: const BorderRadius.all(Radius.circular(12)),
+                        ),
+                          child: SizedBox(
+                            width: 120,
+                            height: 120,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text.rich(TextSpan(children: [
+                                  TextSpan(
+                                    text: '${list?[i].name}',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                  )),
+                                  TextSpan(
+                                    text: '님',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                  ))
+                                ])),
+                                Text.rich(TextSpan(children: [
+                                  TextSpan(
+                                    text: '${list?[i].totalScore}',
+                                    style: TextStyle(
+                                      color: Color(scoreColor),
+                                      fontSize: 35,
+                                      fontWeight: FontWeight.bold,
+                                  )),
+                                  TextSpan(
+                                    text: ' 점',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                  ))
+                                ]))
+                              ],
+                            ),
+                          ),
+                        ),                      
                     );
                   },
                 )
@@ -535,9 +574,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox> {
   @override
   Widget build(BuildContext context) {
 
-    //int totalScore = widget.totalScore; ********************
-    int totalScore = 60;
-
+    int totalScore = widget.totalScore;
     double totalBar =  totalScore/100;
 
     int safetyColor;
@@ -587,7 +624,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox> {
                             child: Center(
                               child: LinearPercentIndicator(
                                 lineHeight: 15,
-                                percent: 0.6, //totalBar로 바꾸기*****************
+                                percent: totalBar,
                                 progressColor: Color(safetyColor),
                               ),
                             ))
