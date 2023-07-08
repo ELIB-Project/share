@@ -1,486 +1,682 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:dio/dio.dart';
+import 'dart:convert';
+import 'dart:io'; //쿠키
 import 'package:elib_project/auth_dio.dart';
-import 'package:intl/intl.dart';
+import 'package:elib_project/pages/tool_regist.dart';
 
-String today = getToday();
-String getToday() {
-    DateTime now = DateTime.now();
-    DateFormat formatter = DateFormat('yyyy-MM-dd');
-    String strToday = formatter.format(now);
-    return strToday;
+class defaultTool {
+  final int id;
+  final String name;
+  final String? shopUrl;
+  final String? videoUrl;
+  final String toolExplain;
+  final int count;
+  final String? locate;
+  final String? exp;
+
+  defaultTool({
+    required this.id,
+    required this.name,
+    required this.shopUrl,
+    required this.videoUrl,
+    required this.toolExplain,
+    required this.count,
+    required this.locate,
+    required this.exp,
+  });
+
+  factory defaultTool.fromJson(Map<String, dynamic> json) {
+    return defaultTool(
+      id: json['id'],
+      name: json['name'],
+      shopUrl: json['shopUrl'],
+      videoUrl: json['videoUrl'],
+      toolExplain: json['toolExplain'],
+      count: json['count'],
+      locate: json['locate'],
+      exp: json['exp'],
+    );
+  }
 }
 
-class toolRegistPage extends StatefulWidget {
-  const toolRegistPage({super.key});
+class customTool {
+  final int id;
+  final String name;
+  final int count;
+  final String? locate;
+  final String? exp;
+
+  customTool({
+    required this.id,
+    required this.name,
+    required this.count,
+    required this.locate,
+    required this.exp,
+  });
+
+  factory customTool.fromJson(Map<String, dynamic> json) {
+    return customTool(
+      id: json['id'],
+      name: json['name'],
+      count: json['count'],
+      locate: json['locate'],
+      exp: json['exp'],
+    );
+  }
+}
+
+Future<List<defaultTool>> loadDefaultTool() async {
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  print("access ${accessToken}");
+
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/user/tool/default');
+
+  if (response.statusCode == 200) {
+    List<dynamic> data = response.data;
+    List<defaultTool> list = data.map((dynamic e) => defaultTool.fromJson(e)).toList();
+    
+    //토큰확인용
+    final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+    final refreshToken = await storage.read(key: 'REFRESH_TOKEN');
+    print("newaccess ${accessToken}");
+    print("newrefresh ${refreshToken}");
+
+    return list;
+  } else {
+    throw Exception('Failed to Load');
+  }
+}
+
+Future<List<customTool>> loadCustomTool() async {
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/user/tool/custom');
+
+  if (response.statusCode == 200) {
+    List<dynamic> data = response.data;
+    List<customTool> list = data.map((dynamic e) => customTool.fromJson(e)).toList();
+    return list;
+  } else {
+    throw Exception('Failed to Load');
+  }
+}
+
+class toolManagePage extends StatefulWidget {
+  const toolManagePage({super.key});
 
   @override
-  State<toolRegistPage> createState() => _toolRegistPageState();
+  State<toolManagePage> createState() => _toolManagePageState();
 }
 
-class _toolRegistPageState extends State<toolRegistPage> {
-  final _formKey = GlobalKey<FormState>();
+class _toolManagePageState extends State<toolManagePage> {
+  late Future<List<defaultTool>> futureDefaultTool;
+  late Future<List<customTool>> futureCustomTool;
 
-  String name = "";
-  String toolExplain = "";
-  int count = 0;
-  String locate = "";
-  String exp = "";
-
-  int buttonCount = 0;
+  @override
+  void initState() {
+    super.initState();
+    futureDefaultTool = loadDefaultTool();
+    futureCustomTool = loadCustomTool();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       theme: ThemeData(
           colorSchemeSeed: const Color(0xff6750a4), useMaterial3: true),
-      home: GestureDetector(
-        onTap: () {
-          FocusScope.of(context).unfocus();
-        },
-        child: Scaffold(
-          appBar: AppBar(
-              centerTitle: true,
-              title:
-                Title(color: Color.fromRGBO(87, 87, 87, 1), 
-                  child: Text(' 도구 등록',
-                            style: TextStyle(
-                            fontSize: 25,
-                            fontWeight: FontWeight.bold,
-                            ),
-                          )),
-              leading: IconButton(
-                icon: Icon(Icons.arrow_back_ios_new_rounded),
+      home: Scaffold(
+        resizeToAvoidBottomInset : false,
+        appBar: AppBar(
+          title:
+              Title(color: Color.fromRGBO(87, 87, 87, 1), 
+                child: Text(' 도구 관리',
+                          style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.bold,
+                          ),
+                        )),
+          actions: [
+            Padding(
+              padding: const EdgeInsets.only(right: 5.0),
+              child: IconButton(
+                icon: Icon(Icons.send),
                 onPressed: () {
-                  Navigator.pop(context); // 뒤로가기 버튼 클릭 이벤트 처리
+                  Navigator.push(
+                    context, MaterialPageRoute(builder: (context) => toolRegistPage())).then((value){
+                      setState((){
+                        futureDefaultTool = loadDefaultTool();
+                        futureCustomTool = loadCustomTool();
+                      });
+                    }
+                  );
                 },
               ),
-          ),
-          body: SafeArea(
+            ),
+          ],
+        ),
+        body: SafeArea(
             top: true,
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 30, left: 20, right: 20),
-                child: Form(
-                  key: _formKey,
-                  child: Column( 
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text.rich(TextSpan(children: [
-                        TextSpan(
-                          text: '제품명',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                        )),
-                        TextSpan(
-                          text: ' (필수)',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                        )),
-                      ])),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, bottom: 0),
-                        child: SizedBox(
-                          child: TextFormField(
-                            autovalidateMode: AutovalidateMode.always,
-                            onChanged: (value) {
-                              name = value;
-                            },
-                            onSaved: (value) {
-                              name = value as String;
-                            },
-                            validator: (value) {
-                              int length = value!.length;
-
-                              if(buttonCount == 1) {
-                                if(length < 1) {
-                                  return '필수 입력란입니다.';
-                                }
-                              }
-
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
-                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                              focusedBorder:  OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                borderSide: BorderSide(width: 2, color: Colors.black),
-                              ),
-                              errorBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(10),
-                                              ),
-                              focusedErrorBorder: OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                borderSide: BorderSide(width: 2, color: Colors.black),
-                              ),
-                              errorStyle: TextStyle(color: Colors.green),
-                              contentPadding: EdgeInsets.only(left: 10, bottom: 0, top: 10, right: 5),
-                            ),
-                            style: TextStyle(
-                              decorationThickness: 0,
-                            ),
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20, ),
-                      
-                      Text(
-                       '상세정보',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, bottom: 0),
-                        child: TextField(
-                          onChanged: (value) {
-                              toolExplain = value;
-                          },
-                          maxLines: 3,
+            child: Padding(
+              padding: const EdgeInsets.only(left: 5, right: 5),
+              child: Container(
+                height: MediaQuery.of(context).size.height,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.only(top: 10, left: 10, right: 10, bottom: 5),
+                      child: TextField(
                           decoration: InputDecoration(
-                            enabledBorder: OutlineInputBorder(
-                                              borderRadius: BorderRadius.circular(10)
-                                            ),
-                            focusedBorder:  OutlineInputBorder(
+                            border: InputBorder.none,
+                            focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.all(Radius.circular(10.0)),
                               borderSide: BorderSide(width: 2, color: Colors.black),
-                            ), //검색 아이콘 추가
-                            contentPadding: EdgeInsets.only(left: 10, bottom: 0, top: 10, right: 5),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                            ),
+                            suffixIcon: Icon(Icons.search), //검색 아이콘 추가
+                            contentPadding: EdgeInsets.only(
+                                left: 10, bottom: 0, top: 10, right: 5),
                           ),
                           style: TextStyle(
-                              decorationThickness: 0,
-                            ),
-                        ),
-                      ),
-
-                      const SizedBox(height: 20, ),
-                      
-                      Text(
-                       '위치',
-                        style: TextStyle(
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15,
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 10, bottom: 0),
-                        child: SizedBox(
-                          height: 40,
-                          child: TextField(
-                            onChanged: (value) {
-                              locate = value;
-                            },
-                           decoration: InputDecoration(
-                              enabledBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(10)
-                                              ),
-                              focusedBorder:  OutlineInputBorder(
-                                borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                borderSide: BorderSide(width: 2, color: Colors.black),
-                              ),
-                              contentPadding: EdgeInsets.only(left: 10, bottom: 0, top: 10, right: 5),
-                            ),
-                            style: TextStyle(
-                              decorationThickness: 0,
-                            ),
+                                decorationThickness: 0,
                           ),
                         ),
-                      ),
-
-                      const SizedBox(height: 20, ),
-                      
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          SizedBox(
-                            height: 130,
-                            width: (MediaQuery.of(context).size.width-60)/2,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text.rich(TextSpan(children: [
-                                  TextSpan(
-                                    text: '유통기한',
-                                    style: TextStyle(
-                                      color: Colors.grey,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold,
-                                    )),
-                                ])),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10, bottom: 20),
-                                  child: SizedBox(
-                                    child: TextFormField(
-                                      autovalidateMode: AutovalidateMode.always,
-                                      onChanged: (value) {
-                                        exp = value;
-                                      },  
-                                      onSaved: (value) {
-                                        exp = value as String;
-                                      },
-                                      validator: (value) {
-                                        int length = value!.length;
-
-                                        if(length == 0) {
-                                          return null;
-                                        }
+                    ),
+              
+                    Container(
+                      height: 460, //media쿼리로 계산
+                      child: SingleChildScrollView(
+                        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                        child: Column(
+                          children: [
+                            FutureBuilder<List<defaultTool>>(
+                              future: futureDefaultTool, 
+                              builder: (context, snapshot){
+                                if (snapshot.hasError) 
+                                  return Text('${snapshot.error}');
+                                      
+                                else if(snapshot.hasData){
+                                  double? defaultHeight = snapshot.data!.length * 70;
                                   
-                                        if (length < 10) {
-                                          return "날짜 형식을 확인해주세요.";
-                                        } else {
-                                          int year = int.parse(value[0]+value[1]+value[2]+value[3]);
-                                          
-                                          if(year < 2022 || year > 2100) {
-                                            return "날짜 형식을 확인해주세요.";
-                                          } else {
-                                            int month = int.parse(value[5]+value[6]);
+                                  return Column(
+                                    children: [
+                                      Padding(
+                                        padding: EdgeInsets.only(top: 0.0),
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
                                             
-                                            if(month < 1 || month > 12) {
-                                              return "날짜 형식을 확인해주세요.";
-                                            } else {
-                                              int day = int.parse(value[8]+value[9]);
-                                              
-                                              if(month == 1 || month == 3 || month == 5 || month == 7 || month == 8 || month == 10 || month == 12) {
-                                                if(day < 1 || day > 31) {
-                                                  return "날짜 형식을 확인해주세요.";
-                                                }
-                                              } else if(month == 4 || month == 6 || month == 9 || month == 11) {
-                                                if(day < 1 || day > 30) {
-                                                  return "날짜 형식을 확인해주세요.";
-                                                }
-                                              } else { 
-                                                if (((year % 4) == 0 && (year % 100) != 0 || (year % 400) == 0)) { //윤년
-                                                  if(day < 1 || day > 29) {
-                                                    return "날짜 형식을 확인해주세요.";
-                                                  }
-                                                } else { //평년
-                                                  if(day < 1 || day > 28) {
-                                                    return "날짜 형식을 확인해주세요.";
-                                                  }
-                                                }
-                                              }
-                                            }
-                                          }
-                                        }
-                                        return null;
-                                      },
-                                      keyboardType: TextInputType.number,
-                                      inputFormatters: [
-                                        FilteringTextInputFormatter.digitsOnly,
-                                        LengthLimitingTextInputFormatter(8),
-                                        NumberFormatter(),
-                                      ],
-                                      decoration: InputDecoration(
-                                          border: InputBorder.none,
-                                          enabledBorder: OutlineInputBorder(
-                                                            borderRadius: BorderRadius.circular(10)
+                                  
+                                            Padding(
+                                              padding: const EdgeInsets.only(left:5, top: 10),
+                                              child: Text.rich(TextSpan(children: [
+                                              TextSpan(
+                                                text: 'Default',
+                                                style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                )),
+                                              ])),
+                                            ),
+                                          
+                                            Padding(
+                                              padding: const EdgeInsets.only(left:5, right: 5),
+                                              child: SizedBox(
+                                                width: MediaQuery.of(context).size.width, //fullsize
+                                                height: defaultHeight,
+                                                child: ListView.builder(
+                                                  physics: const NeverScrollableScrollPhysics(),
+                                                  itemCount: snapshot.data?.length,
+                                                  scrollDirection: Axis.vertical,
+                                                  itemBuilder: (context, i) {
+                                                    int countColor;
+                                                    
+                                                    if(snapshot.data?[i].count == 0) {
+                                                      countColor = 0xFFF93426;
+                                                    } else {
+                                                      countColor = 0xFFFFDF0E;
+                                                    }
+
+                                                    String? exp;
+                                                    if(snapshot.data?[i].exp == null || snapshot.data?[i].exp == "") {
+                                                      exp = "-";
+                                                    } else {
+                                                      exp = snapshot.data?[i].exp;
+                                                    }
+
+                                                    String? locate;
+                                                    if(snapshot.data?[i].locate == null || snapshot.data?[i].locate == "") {
+                                                      locate = "-";
+                                                    } else {
+                                                      locate = snapshot.data?[i].locate;
+                                                      int? length = snapshot.data?[i].locate!.length;
+
+                                                      locate = locate?.substring(0,5);
+                                                      locate = "$locate...";
+                                                    }
+                                  
+                                                    return InkWell(
+                                                      onTap: () {
+                                  
+                                                      },
+                                                      child: Column(
+                                                        children: [
+                                                          Padding(
+                                                            padding: const EdgeInsets.only(top: 4, bottom: 4),
+                                                            child: Container(
+                                                              child: Row(
+                                                                children: [
+                                                                    Padding(
+                                                                      padding: const EdgeInsets.only(right: 15, left: 5, top: 5, bottom: 5),
+                                                                      child: Container(
+                                                                        decoration: BoxDecoration(
+                                                                          border: Border.all( 
+                                                                          width: 1.7,
+                                                                          color: Colors.grey, 
+                                                                          ),
+                                                                          borderRadius: BorderRadius.circular(100),
+                                                                        ),
+                                                                        child: Padding(
+                                                                          padding: EdgeInsets.all(5.0),
+                                                                          child: Icon(
+                                                                            Icons.local_fire_department,
+                                                                            
+                                                                            color: Colors.grey,
+                                                                            size: 40,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                          
+                                                                    Column(
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Text.rich(TextSpan(children: [
+                                                                        TextSpan(
+                                                                          text: '${snapshot.data?[i].name}',
+                                                                          style: TextStyle(
+                                                                            color: Colors.grey,
+                                                                            fontSize: 18,
+                                                                            fontWeight: FontWeight.bold,
+                                                                          )),
+                                                                        ])),
+                                                                        Row(
+                                                                          children: [
+                                                                            Padding(
+                                                                              padding: const EdgeInsets.only(right: 10),
+                                                                              child: Container(      
+                                                                                width: 35, 
+                                                                                decoration: BoxDecoration(
+                                                                                  border: Border.all( 
+                                                                                    width: 1,
+                                                                                    color: Color(countColor), 
+                                                                                  ),
+                                                                                  borderRadius: BorderRadius.circular(5),
+                                                                                  color: Color(countColor),
+                                                                                ),
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                  child: Text(
+                                                                                    '${snapshot.data?[i].count}개',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontSize: 13,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            
+                                                                            Padding(
+                                                                              padding: const EdgeInsets.only(right: 10),
+                                                                              child: Container( 
+                                                                                width: 90,      
+                                                                                decoration: BoxDecoration(
+                                                                                  border: Border.all( 
+                                                                                    width: 1,
+                                                                                    color: Colors.green, 
+                                                                                  ),
+                                                                                  borderRadius: BorderRadius.circular(5),
+                                                                                  color: Colors.green,
+                                                                                ),
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                  child: Text(
+                                                                                    '$locate',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontSize: 13,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            
+                                                                            Container(      
+                                                                              width: 90,
+                                                                              decoration: BoxDecoration(
+                                                                                border: Border.all( 
+                                                                                  width: 1,
+                                                                                  color: Color(0xFFA2A2A2), 
+                                                                                ),
+                                                                                borderRadius: BorderRadius.circular(5),
+                                                                                color: Color(0xFFA2A2A2),
+                                                                              ),
+                                                                              child: Padding(
+                                                                                padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                child: Text(
+                                                                                  '$exp',
+                                                                                  style: TextStyle(
+                                                                                    color: Colors.white,
+                                                                                    fontSize: 13,
+                                                                                  ),
+                                                                                  textAlign: TextAlign.center,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        )
+                                                                      ],
+                                                                    ),
+                                                                ],
+                                                              ),
+                                                            ),
                                                           ),
-                                          focusedBorder:  OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                            borderSide: BorderSide(width: 2, color: Colors.black),
-                                          ),
-                                          errorBorder: OutlineInputBorder(
-                                                borderRadius: BorderRadius.circular(10),
-                                          ),
-                                          focusedErrorBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                            borderSide: BorderSide(width: 2, color: Colors.black),
-                                          ),
-                                          errorStyle: TextStyle(color: Colors.green),
-                                          contentPadding: EdgeInsets.only(left: 10, bottom: 0, top: 10, right: 5),
-                                          hintText: '$today',
-                                          hintStyle: TextStyle(
-                                            color: Colors.grey,
-                                          ),
-                                        ),
-                                        style: TextStyle(
-                                          decorationThickness: 0,
-                                       ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 130,
-                            width: (MediaQuery.of(context).size.width-60)/2,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.start,
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                 '개수',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 15,
-                                  ),
-                                ),
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 10, bottom: 20),
-                                  child: SizedBox(
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        border: Border.all( 
-                                         width: 1,
-                                         color: Colors.black, 
-                                        ),
-                                      borderRadius: BorderRadius.circular(10),
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                if(count>0) {
-                                                  count--;
+                                                        ]
+                                                      ),
+                                                    );
+                                                  })
+                                              ),
+                                            ),
+                                          
+                                            Padding(
+                                              padding: const EdgeInsets.only(left:5, top: 10),
+                                              child: Text.rich(TextSpan(children: [
+                                              TextSpan(
+                                                text: 'Custom',
+                                                style: TextStyle(
+                                                color: Colors.grey,
+                                                fontSize: 15,
+                                                fontWeight: FontWeight.bold,
+                                                )),
+                                              ])),
+                                            ),
+                                            FutureBuilder<List<customTool>>(
+                                              future: futureCustomTool,
+                                              builder: (context, snapshot) {
+                                                if (snapshot.hasError) 
+                                                  return Text('${snapshot.error}');
+                                                
+                                                else if(snapshot.hasData){
+                                                  double? customHeight = snapshot.data!.length * 73;
+                                                  print(customHeight);
+                                                  print(snapshot.data);
+                                                  return Padding(
+                                                    padding: const EdgeInsets.only(left:5, right: 5),
+                                                    child: SizedBox(
+                                                      width: MediaQuery.of(context).size.width,
+                                                      height: customHeight,
+                                                      child: ListView.builder(
+                                                        physics: const NeverScrollableScrollPhysics(),
+                                                        itemCount: snapshot.data?.length,
+                                                        scrollDirection: Axis.vertical,
+                                                        itemBuilder: (context, i) {
+                                                          int countColor;
+                                                                                            
+                                                          if(snapshot.data?[i].count == 0) {
+                                                            countColor = 0xFFF93426; //red
+                                                          } else {
+                                                            countColor = 0xFFFFDF0E; //yellow
+                                                          }
+
+                                                          String? exp;
+                                                          if(snapshot.data?[i].exp == null || snapshot.data?[i].exp == "") {
+                                                            exp = "-";
+                                                          } else {
+                                                            exp = snapshot.data?[i].exp;
+                                                          }
+
+                                                          String? locate;
+                                                          if(snapshot.data?[i].locate == null || snapshot.data?[i].locate == "") {
+                                                            locate = "-";
+                                                          } else {
+                                                            locate = snapshot.data?[i].locate;
+                                                            int? length = snapshot.data?[i].locate!.length;
+
+                                                            locate = locate?.substring(0,5);
+                                                            locate = "$locate...";
+                                                          }
+                                                    
+                                                          return InkWell(
+                                                            onTap: () {
+                                                                        
+                                                            },
+                                                            child: Column(
+                                                              children: [
+                                                                Padding(
+                                                            padding: const EdgeInsets.only(top: 4, bottom: 4),
+                                                            child: Container(
+                                                              child: Row(
+                                                                children: [
+                                                                    Padding(
+                                                                      padding: const EdgeInsets.only(right: 15, left: 5, top: 5, bottom: 5),
+                                                                      child: Container(
+                                                                        decoration: BoxDecoration(
+                                                                          border: Border.all( 
+                                                                          width: 1.7,
+                                                                          color: Colors.grey, 
+                                                                          ),
+                                                                          borderRadius: BorderRadius.circular(100),
+                                                                        ),
+                                                                        child: Padding(
+                                                                          padding: EdgeInsets.all(10.0),
+                                                                          child: Icon(
+                                                                            Icons.medical_services,
+                                                                            
+                                                                            color: Colors.grey,
+                                                                            size: 30,
+                                                                          ),
+                                                                        ),
+                                                                      ),
+                                                                    ),
+                                                          
+                                                                    Column(
+                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                      children: [
+                                                                        Text.rich(TextSpan(children: [
+                                                                        TextSpan(
+                                                                          text: '${snapshot.data?[i].name}',
+                                                                          style: TextStyle(
+                                                                            color: Colors.grey,
+                                                                            fontSize: 18,
+                                                                            fontWeight: FontWeight.bold,
+                                                                          )),
+                                                                        ])),
+                                                                        Row(
+                                                                          children: [
+                                                                            Padding(
+                                                                              padding: const EdgeInsets.only(right: 10),
+                                                                              child: Container( 
+                                                                                width: 35,     
+                                                                                decoration: BoxDecoration(
+                                                                                  border: Border.all( 
+                                                                                    width: 1,
+                                                                                    color: Color(countColor), 
+                                                                                  ),
+                                                                                  borderRadius: BorderRadius.circular(5),
+                                                                                  color: Color(countColor),
+                                                                                ),
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                  child: Text(
+                                                                                    '${snapshot.data?[i].count}개',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontSize: 13,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            
+                                                                            Padding(
+                                                                              padding: const EdgeInsets.only(right: 10),
+                                                                              child: Container(  
+                                                                                width: 90,    
+                                                                                decoration: BoxDecoration(
+                                                                                  border: Border.all( 
+                                                                                    width: 1,
+                                                                                    color: Colors.green, 
+                                                                                  ),
+                                                                                  borderRadius: BorderRadius.circular(5),
+                                                                                  color: Colors.green,
+                                                                                ),
+                                                                                child: Padding(
+                                                                                  padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                  child: Text(
+                                                                                    '$locate',
+                                                                                    style: TextStyle(
+                                                                                      color: Colors.white,
+                                                                                      fontSize: 13,
+                                                                                    ),
+                                                                                    textAlign: TextAlign.center,
+                                                                                  ),
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                            
+                                                                            Container(      
+                                                                              width: 90,
+                                                                              decoration: BoxDecoration(
+                                                                                border: Border.all( 
+                                                                                  width: 1,
+                                                                                  color: Color(0xFFA2A2A2), 
+                                                                                ),
+                                                                                borderRadius: BorderRadius.circular(5),
+                                                                                color: Color(0xFFA2A2A2),
+                                                                              ),
+                                                                              child: Padding(
+                                                                                padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                child: Text(
+                                                                                  '$exp',
+                                                                                  style: TextStyle(
+                                                                                    color: Colors.white,
+                                                                                    fontSize: 13,
+                                                                                  ),
+                                                                                  textAlign: TextAlign.center,
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ],
+                                                                        )
+                                                                      ],
+                                                                    ),
+                                                                ],
+                                                              ),
+                                                            ),
+                                                          ),
+                                                              ],
+                                                            ),
+                                                          );
+                                                        },
+                                                      ),
+                                                    )
+                                                  );
                                                 }
-                                              });
-                                            }, 
-                                            icon: Icon(
-                                              Icons.remove, 
-                                              size: 20,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                          Text(
-                                            count.toString(),
-                                            style: TextStyle(
-                                              color: Colors.black,
-                                              fontSize: 20,
-                                            ),
-                                          ),
-                                          IconButton(
-                                            onPressed: () {
-                                              setState(() {
-                                                count++;
-                                              }); 
-                                            }, 
-                                            icon: Icon(
-                                              Icons.add, 
-                                              size: 20,
-                                              color: Colors.black,
-                                            ),
-                                          ),
-                                        ],
+                                                else
+                                                  return CircularProgressIndicator();
+                                            })
+                                          ],
+                                        )
                                       ),
-                                    )
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 0),
-                        child: Center(
-                          child: ElevatedButton(
-                            onPressed: () async {
-                              buttonCount = 1;
-
-                              if (_formKey.currentState!.validate()) {
-                                final storage = FlutterSecureStorage();
-                                final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-                  
-                                var dio = await authDio();
-                                dio.options.headers['Authorization'] = '$accessToken';
-                                final response = await dio.post('/api/v1/user/tool/custom',
-                                  data: {
-                                    "name": name,
-                                    "toolExplain": toolExplain,
-                                    "count": count,
-                                    "locate": locate,
-                                    "exp": exp,
-                                  }
-                                );
-                  
-                                if (response.statusCode == 200) {
-                                  print(accessToken);
-                                  print(response.data);
-                                  Navigator.pop(context);
-                                } else {
-                                  throw Exception('Failed to Load');
-                                }
-                              }
-
-                            },
-                            child: Text(
-                              "등록하기",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 15,
-                              ),
-                            ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(Colors.green),
-                              shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                )
-                              ),
-                            ),      
-                          ),
+                                  ],
+                                  );}
+                                return CircularProgressIndicator();
+                              }),
+                          ],
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
-            )
-          ),
+            ),
+            
         ),
-      ),
+          bottomNavigationBar: _bulidBottomAppBar(),
+        ),
         
-    );
+      );
   }
 }
 
-class NumberFormatter extends TextInputFormatter {
-  @override
-  TextEditingValue formatEditUpdate(
-      TextEditingValue oldValue, TextEditingValue newValue) {
-    var text = newValue.text;
 
-    if (newValue.selection.baseOffset == 0) {
-      return newValue;
-    }
 
-    var buffer = StringBuffer();
-    for (int i = 0; i < text.length; i++) {
-      buffer.write(text[i]);
-      var nonZeroIndex = i + 1;
-      if (nonZeroIndex <= 4) {
-        if (nonZeroIndex % 4 == 0 && nonZeroIndex != text.length) {
-          buffer.write('-'); // Add double spaces.
-        }
-      } else {
-        if (nonZeroIndex % 6 == 0 && nonZeroIndex != text.length && nonZeroIndex > 5) {
-          buffer.write('-');
-        }
-      }
-    }
-
-    var string = buffer.toString();
-    return newValue.copyWith(
-        text: string,
-        selection: TextSelection.collapsed(offset: string.length));
-  }
+BottomAppBar _bulidBottomAppBar() {
+  return BottomAppBar(
+    elevation: 1,
+    child: SizedBox(
+      height: kBottomNavigationBarHeight,
+      // color: Colors.white,
+      child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: <Widget>[
+            Column(
+              children: const <Widget>[
+                Icon(
+                  Icons.construction,
+                ),
+                Text("도구관리")
+              ],
+            ),
+            Column(
+              children: const <Widget>[
+                Icon(
+                  Icons.edit_document,
+                ),
+                Text("훈련관리")
+              ],
+            ),
+            Column(
+              children: const <Widget>[
+                Icon(
+                  Icons.home,
+                ),
+                Text("홈")
+              ],
+            ),
+            Column(
+              children: const <Widget>[
+                Icon(
+                  Icons.groups,
+                ),
+                Text("구성원관리")
+              ],
+            ),
+            Column(
+              children: const <Widget>[
+                Icon(
+                  Icons.more_horiz,
+                ),
+                Text("더보기")
+              ],
+            )
+          ]),
+    ),
+  );
 }
