@@ -401,7 +401,7 @@ class _editDefaultToolPageState extends State<editDefaultToolPage> {
                                 dio.options.headers['Authorization'] = '$accessToken';
                                 final response = await dio.post('/api/v1/user/tool/default',
                                   data: {
-                                    "toolsId": tool.id,
+                                    "toolId": tool.toolId,
                                     "count": count,
                                     "locate": locate,
                                     "exp": exp,
