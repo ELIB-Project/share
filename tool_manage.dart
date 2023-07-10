@@ -9,8 +9,10 @@ import 'package:elib_project/pages/tool_regist.dart';
 import 'package:elib_project/pages/edit_default_tool.dart';
 import 'package:elib_project/pages/edit_custom_tool.dart';
 
+String searchText = "";
+
 class defaultTool {
-  final int id;
+  final int toolId;
   final String? name;
   final String? shopUrl;
   final String? videoUrl;
@@ -20,7 +22,7 @@ class defaultTool {
   final String? exp;
 
   defaultTool({
-    required this.id,
+    required this.toolId,
     required this.name,
     required this.shopUrl,
     required this.videoUrl,
@@ -32,7 +34,7 @@ class defaultTool {
 
   factory defaultTool.fromJson(Map<String, dynamic> json) {
     return defaultTool(
-      id: json['id'],
+      toolId: json['toolId'],
       name: json['name'],
       shopUrl: json['shopUrl'],
       videoUrl: json['videoUrl'],
@@ -183,19 +185,32 @@ class _toolManagePageState extends State<toolManagePage> {
                       Padding(
                         padding: const EdgeInsets.only(top: 10, left: 5, right: 5, bottom: 5),
                         child: Padding(
-                          padding: const EdgeInsets.only(left: 10, right: 10),
+                          padding: const EdgeInsets.only(left: 5, right: 5),
                           child: Container(
+                            decoration: BoxDecoration(
+                              boxShadow: <BoxShadow>[
+                                BoxShadow(
+                                    color: Theme.of(context).shadowColor.withOpacity(0.3),
+                                    offset: const Offset(0, 3),
+                                    blurRadius: 5.0)
+                              ],
+                              borderRadius: const BorderRadius.all(Radius.circular(15.0)),
+                              color: Color.fromARGB(255, 255, 255, 255),
+                            ),
                             height: 40,
                             child: TextField(
+                                onChanged: (value) {
+                                  setState(() {
+                                    searchText = value;
+                                  });
+                                },
                                 decoration: InputDecoration(
                                   border: InputBorder.none,
                                   focusedBorder: OutlineInputBorder(
                                     borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                    borderSide: BorderSide(width: 2, color: Colors.black),
+                                    borderSide: BorderSide(width: 1, color: Colors.grey.shade500),
                                   ),
-                                  enabledBorder: OutlineInputBorder(
-                                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                                  ),
+                                  
                                   suffixIcon: Icon(Icons.search), //검색 아이콘 추가
                                   contentPadding: EdgeInsets.only(
                                       left: 10, bottom: 0, top: 0, right: 5),
@@ -222,13 +237,13 @@ class _toolManagePageState extends State<toolManagePage> {
                                     return Text('${snapshot.error}');
                                         
                                   else if(snapshot.hasData){
-                                    double? defaultHeight = snapshot.data!.length * 82;
                                     
                                     return Column(
                                       children: [
                                         Padding(
                                           padding: EdgeInsets.only(top: 0.0),
                                           child: Column(
+                                            mainAxisSize: MainAxisSize.min,
                                             mainAxisAlignment: MainAxisAlignment.start,
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
@@ -251,8 +266,8 @@ class _toolManagePageState extends State<toolManagePage> {
                                                 padding: const EdgeInsets.only(left:15, right: 15),
                                                 child: SizedBox(
                                                   width: MediaQuery.of(context).size.width, //fullsize
-                                                  height: defaultHeight,
                                                   child: ListView.builder(
+                                                    shrinkWrap:true,
                                                     physics: const NeverScrollableScrollPhysics(),
                                                     itemCount: snapshot.data?.length,
                                                     scrollDirection: Axis.vertical,
@@ -264,33 +279,37 @@ class _toolManagePageState extends State<toolManagePage> {
                                                       } else {
                                                         countColor = 0xFFFFDF0E;
                                                       }
-
+                                                  
                                                       String? name;
                                                       if(snapshot.data?[i].name == null || snapshot.data?[i].name == "") {
                                                         name = "";
                                                       } else {
                                                         name = snapshot.data?[i].name;
                                                       }
-      
+                                                      
                                                       String? exp;
                                                       if(snapshot.data?[i].exp == null || snapshot.data?[i].exp == "") {
                                                         exp = "-";
                                                       } else {
                                                         exp = snapshot.data?[i].exp;
                                                       }
-      
+                                                      
                                                       String? locate;
                                                       if(snapshot.data?[i].locate == null || snapshot.data?[i].locate == "") {
                                                         locate = "-";
                                                       } else {
                                                         locate = snapshot.data?[i].locate;
-
+                                                  
                                                         if(locate!.length>5) {
                                                           locate = locate?.substring(0,5);
                                                           locate = "$locate...";
                                                         }
                                                       }
-                                    
+                                                  
+                                                      if(searchText!.isNotEmpty && !snapshot.data![i].name!.toLowerCase().contains(searchText.toLowerCase())) {
+                                                        return SizedBox.shrink();
+                                                      } else
+                                                  
                                                       return InkWell(
                                                         onTap: () {
                                                           showDefault(
@@ -457,13 +476,12 @@ class _toolManagePageState extends State<toolManagePage> {
                                                     return Text('${snapshot.error}');
                                                   
                                                   else if(snapshot.hasData){
-                                                    double? customHeight = snapshot.data!.length * 82;
                                                     return Padding(
                                                       padding: const EdgeInsets.only(left: 15, right: 15),
                                                       child: SizedBox(
                                                         width: MediaQuery.of(context).size.width,
-                                                        height: customHeight,
                                                         child: ListView.builder(
+                                                          shrinkWrap: true,
                                                           physics: const NeverScrollableScrollPhysics(),
                                                           itemCount: snapshot.data?.length,
                                                           scrollDirection: Axis.vertical,
@@ -501,7 +519,10 @@ class _toolManagePageState extends State<toolManagePage> {
                                                                 locate = "$locate...";
                                                               }    
                                                             }
-                                                      
+                                                            if(searchText!.isNotEmpty && !snapshot.data![i].name!.toLowerCase().contains(searchText.toLowerCase())) {
+                                                              return SizedBox.shrink();
+                                                            } else
+                                                            
                                                             return InkWell(
                                                               onTap: () {
                                                                 showCustom(
@@ -880,7 +901,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                       height: 35,
                       child: ElevatedButton(
                         onPressed: () async {
-                          print(defaultTool.id);
+                          print(defaultTool.toolId);
                           Navigator.push(
                             context,
                             MaterialPageRoute(
