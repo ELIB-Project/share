@@ -7,7 +7,8 @@ import '../pages/tool_manage.dart';
 double iconSize = 35;
 
 class BulidBottomAppBar extends StatefulWidget {
-  const BulidBottomAppBar({Key? key}) : super(key: key);
+  const BulidBottomAppBar({required this.index, Key? key}) : super(key: key);
+  final index;
 
   @override
   State<BulidBottomAppBar> createState() => _BulidBottomAppBarState();
@@ -25,7 +26,7 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
   @override
   void initState() {
     super.initState();
-    _controller.index = 2;
+    _controller.index = widget.index;
   }
 
   @override
