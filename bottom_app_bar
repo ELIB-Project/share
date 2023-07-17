@@ -6,12 +6,6 @@ import '../pages/tool_manage.dart';
 
 double iconSize = 35;
 
-int colorA = 0xFF9E9E9E;
-int colorB = 0xFF9E9E9E;
-int colorC = 0xFF000000;
-int colorD = 0xFF9E9E9E;
-int colorE = 0xFF9E9E9E;
-
 class BulidBottomAppBar extends StatefulWidget {
   const BulidBottomAppBar({Key? key}) : super(key: key);
 
@@ -31,26 +25,23 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
   @override
   void initState() {
     super.initState();
-
-    if(colorA == 0xFF000000) {
-      _controller.index = 0;
-    } else if(colorB == 0xFF000000) {
-      _controller.index = 1;
-    } else if(colorC == 0xFF000000) {
-      _controller.index = 2;
-    } else if(colorD == 0xFF000000) {
-      _controller.index = 3;
-    } else if(colorE == 0xFF000000) {
-      _controller.index = 4;
-    } else {
-      _controller.index = 2;
-    }
+    _controller.index = 2;
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      child: DefaultTabController(
+    return Scaffold(
+      body: TabBarView(children: [
+        toolManagePage(),
+        toolManagePage(),
+        HomePage(),
+        MemberManagementPage(),
+        PlusPage(title: 'plus',)
+        ],
+        controller: _controller,
+      ),
+
+      bottomNavigationBar: DefaultTabController(
         length: 5,
         child: TabBar(
             controller: _controller,
@@ -63,72 +54,12 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
               color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
             labelStyle: TextStyle(
               color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
-
-            onTap: (index) {
-              switch (index) {
-                case 0 : 
-                setState(() {
-                  colorA = 0xFF000000;
-
-                  colorB = 0xFF9E9E9E;
-                  colorC = 0xFF9E9E9E;
-                  colorD = 0xFF9E9E9E;
-                  colorE = 0xFF9E9E9E;
-                  _navigateToToolManagementPage(context);
-                });
-
-                case 1 : 
-                setState(() {
-                  colorB = 0xFF000000;
-
-                  colorA = 0xFF9E9E9E;
-                  colorC = 0xFF9E9E9E;
-                  colorD = 0xFF9E9E9E;
-                  colorE = 0xFF9E9E9E;
-                  _navigateToTrainingManagementPage(context);
-                });
-                
-                case 2 : 
-                setState(() {
-                  colorC = 0xFF000000;
-
-                  colorA = 0xFF9E9E9E;
-                  colorB = 0xFF9E9E9E;
-                  colorD = 0xFF9E9E9E;
-                  colorE = 0xFF9E9E9E;
-                  _navigateToHomePage(context); 
-                });
-
-                case 3 : 
-                setState(() { 
-                  colorD = 0xFF000000;
-
-                  colorA = 0xFF9E9E9E;
-                  colorB = 0xFF9E9E9E;
-                  colorC = 0xFF9E9E9E;
-                  colorE = 0xFF9E9E9E; 
-                  _navigateToMemberManagementPage(context);         
-                });
-
-                case 4 : 
-                setState(() {
-                  colorE = 0xFF000000;
-
-                  colorA = 0xFF9E9E9E;
-                  colorB = 0xFF9E9E9E;
-                  colorC = 0xFF9E9E9E;
-                  colorD = 0xFF9E9E9E;
-                  _navigateToPlusPage(context);
-                });
-              }    
-            },
      
             tabs: [
               Tab(
                 icon: Icon(
                   Icons.construction,
                   size: iconSize,
-                  color: Color(colorA),
                 ),
                 text: "도구관리"
                 
@@ -138,7 +69,6 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
                 icon: Icon(
                   Icons.edit_document, 
                   size: iconSize,
-                  color: Color(colorB),
                 ),
                 text: "훈련관리"
               ),
@@ -147,7 +77,6 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
                 icon: Icon(
                   Icons.home,
                   size: iconSize,
-                  color: Color(colorC),
                 ),
                 text: "홈"
               ),
@@ -157,7 +86,6 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
                 icon: Icon(
                   Icons.groups,
                   size: iconSize,
-                  color: Color(colorD),
                 ),
                 text: "구성원관리"
                 
@@ -167,7 +95,6 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
                 icon: Icon(
                   Icons.more_horiz,
                   size: iconSize,
-                  color: Color(colorE),
                 ),
                 text: "더보기"
               ),
@@ -175,9 +102,13 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
             
           ),
           
+          
       ),
+      
     );    
   }
+
+  /////안씀 ////////////////////
 
   void _navigateToToolManagementPage(BuildContext context) {
     // 도구관리 페이지
