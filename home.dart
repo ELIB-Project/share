@@ -1,4 +1,6 @@
+import 'package:elib_project/pages/tool_manage.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'dart:ui';
 import 'dart:math';
@@ -14,7 +16,7 @@ double appBarHeight = 70;
 double mediaHeight(BuildContext context, double scale) =>
     (MediaQuery.of(context).size.height - appBarHeight) * scale;
 double mediaWidth(BuildContext context, double scale) =>
-    (MediaQuery.of(context).size.width - appBarHeight) * scale;
+    (MediaQuery.of(context).size.width) * scale;
 
 class Score {
   final String name;
@@ -100,7 +102,8 @@ Future<List<familyScore>> loadFamilyScore() async {
 }
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key, this.changeIndex});
+  final changeIndex;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -119,6 +122,20 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    Future<Position> position = _getUserLocation();
+    position.then((value) {
+      if (value != null) {
+        double latitude = value.latitude;
+        double longitude = value.longitude;
+        sendUserLocation(latitude, longitude);
+        print("Latitude: $latitude, Longitude: $longitude");
+      } else {
+        print("Failed to get the position.");
+      }
+    }).catchError((error) {
+      print("Error: $error");
+    });
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
@@ -195,13 +212,15 @@ class _HomePageState extends State<HomePage> {
                               ToolScoreBox(
                                 toolScore: snapshot.data?.toolScore,
                                 oldToolScore: snapshot.data?.oldToolScore,
+                                changeIndex: widget.changeIndex,
                               ),
 
                               SizedBox(height: mediaHeight(context, 0.03)),
 
                               TrainingScoreBox(
                                 trainScore: snapshot.data?.trainScore,
-                                oldTrainScore: snapshot.data?.oldTrainScore
+                                oldTrainScore: snapshot.data?.oldTrainScore,
+                                changeIndex: widget.changeIndex,
                               ),
 
                               SizedBox(height: mediaHeight(context, 0.03)),
@@ -229,7 +248,8 @@ class _HomePageState extends State<HomePage> {
                   }),
             ),
           ),
-          bottomNavigationBar: BulidBottomAppBar()),
+          //bottomNavigationBar: BulidBottomAppBar()
+        ),
     );
   }
 }
@@ -240,10 +260,12 @@ class ToolScoreBox extends StatefulWidget {
     Key? key,
     required this.toolScore,
     required this.oldToolScore,
+    this.changeIndex,
   }) : super(key: key);
 
   final toolScore;
   final oldToolScore;
+  final changeIndex;
 
   @override
   State<ToolScoreBox> createState() => _ToolScoreBoxState();
@@ -281,9 +303,15 @@ class _ToolScoreBoxState extends State<ToolScoreBox> with TickerProviderStateMix
         gapPercentage = newgapPercentage;
         newgapPercentage = gap / 100;
         percentageAnimationController.forward();
-
       });
   }
+
+  @override
+  dispose() {
+    percentageAnimationController.dispose(); // you need this
+    super.dispose();
+  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -341,93 +369,93 @@ class _ToolScoreBoxState extends State<ToolScoreBox> with TickerProviderStateMix
 
             SizedBox(height: mediaHeight(context, 0.01)),
 
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 7.0,
-                      offset: Offset(2, 5), // changes position of shadow
-                    ),
-                  ],
-                ),
-                width: mediaWidth(context, 1.1),
-                height: 100,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                  Flexible(
-                    flex: 2,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.construction,
-                          color: Colors.grey,
-                          size: 60,
-                        ),
-                      ],
-                    ),
+            InkWell(
+              onTap: () {
+                widget.changeIndex(0);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 7.0,
+                        offset: Offset(2, 5), // changes position of shadow
+                      ),
+                    ],
                   ),
-
-                  Flexible(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          ' 재난대비 도구 현황',
-                          style: TextStyle(
-                            fontSize: 18,
+                  width: mediaWidth(context, 0.95),
+                  height: 100,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                     Expanded(
+                      flex: 2,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.construction,
                             color: Colors.grey,
-                            fontWeight: FontWeight.bold,
+                            size: 60,
                           ),
-                        ),
-                      
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              gapIcon,
-                              style: TextStyle(
-                                  color: Color(toolColor),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)),
-                            PercentScore(percent: gapPercentage, color: Color(toolColor), fontSize: 25.0, width: 35.0),
-                            Text(
-                                '$gapNum',
+                        ],
+                      ),
+                      ),
+            
+                     Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            ' 재난대비 도구 현황',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                gapIcon,
                                 style: TextStyle(
                                     color: Color(toolColor),
-                                    fontSize: 23,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold)),
-                            Text(
-                                text,
-                                style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 23,
-                                    fontWeight: FontWeight.bold)),   
-                          ],
-                        ),
-                      ],
+                              PercentScore(percent: gapPercentage, color: Color(toolColor), fontSize: 25.0, width: 35.0),
+                              Text(
+                                  '$gapNum',
+                                  style: TextStyle(
+                                      color: Color(toolColor),
+                                      fontSize: 23,
+                                      fontWeight: FontWeight.bold)),
+                              Text(
+                                  text,
+                                  style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 23,
+                                      fontWeight: FontWeight.bold)),   
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-
-                  Flexible(
-                    flex: 2,
-                    child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          PercentScore(percent: percentage, color: Color(toolColor), fontSize: 65.0, width: 100.0),
-                        ]),
-                  )
-                ])),
+            
+                     Expanded(
+                      flex: 3,
+                      child: PercentScore(percent: percentage, color: Color(toolColor), fontSize: 65.0, width: 100.0),
+                                     )
+                  ])),
+            ),
           ],
         ));
   }
@@ -439,10 +467,12 @@ class TrainingScoreBox extends StatefulWidget {
     Key? key,
     required this.trainScore,
     required this.oldTrainScore,
+    this.changeIndex,
   }) : super(key: key);
 
   final trainScore;
   final oldTrainScore;
+  final changeIndex;
 
   @override
   State<TrainingScoreBox> createState() => _TrainingScoreBoxState();
@@ -540,93 +570,93 @@ class _TrainingScoreBoxState extends State<TrainingScoreBox> with TickerProvider
 
             SizedBox(height: mediaHeight(context, 0.01)),
 
-            Container(
-              decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                  borderRadius: BorderRadius.circular(15),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
-                      spreadRadius: 2,
-                      blurRadius: 7.0,
-                      offset: Offset(2, 5), // changes position of shadow
-                    ),
-                  ],
-                ),
-                width: mediaWidth(context, 1.1),
-                height: 100,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  children: [
-                    Flexible(
-                      flex: 2,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
+            InkWell(
+              onTap: () {
+                widget.changeIndex(1);
+              },
+              child: Container(
+                decoration: BoxDecoration(
+                    color: Colors.white,
+                    border: Border.all(color: Colors.grey.shade400, width: 1.5),
+                    borderRadius: BorderRadius.circular(15),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.5),
+                        spreadRadius: 2,
+                        blurRadius: 7.0,
+                        offset: Offset(2, 5), // changes position of shadow
+                      ),
+                    ],
+                  ),
+                  width: mediaWidth(context, 0.95),
+                  height: 100,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        flex: 2,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.edit_document,
+                              color: Colors.grey,
+                              size: 60,
+                            ),
+                          ],
+                        ),
+                      ),
+            
+                      Expanded(
+                      flex: 4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.edit_document,
-                            color: Colors.grey,
-                            size: 60,
+                          Text(
+                            ' 재난대비 훈련 현황',
+                            style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.grey,
+                              fontWeight: FontWeight.bold
+                            ),
                           ),
-                        ],
-                      ),
-                    ),
-
-                    Flexible(
-                    flex: 3,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          ' 재난대비 훈련 현황',
-                          style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold
-                          ),
-                        ),
-                      
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              gapIcon,
-                              style: TextStyle(
-                                  color: Color(trainColor),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)),
-                            PercentScore(percent: gapPercentage, color: Color(trainColor), fontSize: 25.0, width: 35.0),
-                            Text(
-                                '$gapNum',
+                        
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                gapIcon,
                                 style: TextStyle(
                                     color: Color(trainColor),
-                                    fontSize: 23,
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold)),
-                            Text(
-                                text,
-                                style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontSize: 23,
-                                    fontWeight: FontWeight.bold)),   
-                            ],
-                          ),
-                        ],
+                              PercentScore(percent: gapPercentage, color: Color(trainColor), fontSize: 25.0, width: 35.0),
+                              Text(
+                                  '$gapNum',
+                                  style: TextStyle(
+                                      color: Color(trainColor),
+                                      fontSize: 23,
+                                      fontWeight: FontWeight.bold)),
+                              Text(
+                                  text,
+                                  style: TextStyle(
+                                      color: Colors.grey.shade600,
+                                      fontSize: 23,
+                                      fontWeight: FontWeight.bold)),   
+                              ],
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-
-                    Flexible(
-                    flex: 2,
-                    child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.end,
-                        children: [
-                          PercentScore(percent: percentage, color: Color(trainColor), fontSize: 65.0, width: 100.0),
-                        ]),
-                    )
-                  ])),
+            
+                      Expanded(
+                      flex: 3,
+                      child: PercentScore(percent: percentage, color: Color(trainColor), fontSize: 65.0, width: 100.0),
+                      )
+                    ])),
+            ),
 
           ],
         ));
@@ -671,7 +701,7 @@ class FamilyScoreBox extends StatelessWidget {
                   ),
                 ],
               ),
-              width: mediaWidth(context, 1.1),
+              width: mediaWidth(context, 0.95),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -945,7 +975,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox> with TickerProviderStat
                       child: Text(
                         "$text",
                         style: TextStyle(
-                          fontSize: 23,
+                          fontSize: 20,
                           color: Color(safetyColor),
                           fontWeight: FontWeight.bold,
                         ),
@@ -957,7 +987,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox> with TickerProviderStat
                       child: Text(
                         "재난대비 도구 점수 $toolText",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: const Color.fromARGB(255, 133, 133, 133),
                           //fontWeight: FontWeight.bold,
                         ),
@@ -969,7 +999,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox> with TickerProviderStat
                       child: Text(
                         "재난대비 훈련 점수 $trainText",
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: const Color.fromARGB(255, 133, 133, 133),
                           //fontWeight: FontWeight.bold,
                         ),
@@ -1115,5 +1145,60 @@ class PercentScorePaint extends CustomPainter {
   @override
   bool shouldRepaint(PercentScorePaint oldDelegate) {
     return true;
+  }
+}
+
+// 위치정보 받아오는 함수 구현
+Future<Position> _getUserLocation() async {
+  bool serviceEnabled;
+  LocationPermission permission;
+
+  // Test if location services are enabled.
+  serviceEnabled = await Geolocator.isLocationServiceEnabled();
+  if (!serviceEnabled) {
+    // Location services are not enabled don't continue
+    // accessing the position and request users of the
+    // App to enable the location services.
+    return Future.error('Location services are disabled.');
+  }
+
+  permission = await Geolocator.checkPermission();
+  if (permission == LocationPermission.denied) {
+    permission = await Geolocator.requestPermission();
+    if (permission == LocationPermission.denied) {
+      // Permissions are denied, next time you could try
+      // requesting permissions again (this is also where
+      // Android's shouldShowRequestPermissionRationale
+      // returned true. According to Android guidelines
+      // your App should show an explanatory UI now.
+      return Future.error('Location permissions are denied');
+    }
+  }
+
+  if (permission == LocationPermission.deniedForever) {
+    // Permissions are denied forever, handle appropriately.
+    return Future.error(
+        'Location permissions are permanently denied, we cannot request permissions.');
+  }
+
+  // When we reach here, permissions are granted and we can
+  // continue accessing the position of the device.
+  return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high);
+}
+
+Future<void> sendUserLocation(double lat, double lon) async {
+  // 헤더에 access토큰 첨부를 위해 토큰 불러오기
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio
+      .patch('/api/v1/user/locate', queryParameters: {'lat': lat, 'lon': lon});
+
+  if (response.statusCode == 200) {
+    print(response.data);
+  } else {
+    throw Exception('fail');
   }
 }
