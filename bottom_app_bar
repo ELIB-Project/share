@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../pages/home_page.dart';
 import '../pages/membermanagement_page.dart';
 import '../pages/plus_page.dart';
 import '../pages/tool_manage.dart';
+import '../pages/train_manage.dart';
 
 double iconSize = 35;
 
@@ -17,10 +19,11 @@ class BulidBottomAppBar extends StatefulWidget {
 class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProviderStateMixin{
   late TabController _controller = TabController(length: 5, vsync: this);
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
+  var index = 2;
+  changeIndex(index) {
+    setState(() {
+      _controller.index = index;
+    });
   }
 
   @override
@@ -30,12 +33,18 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: TabBarView(children: [
         toolManagePage(),
-        toolManagePage(),
-        HomePage(),
+        trainPage(),
+        HomePage(changeIndex: changeIndex),
         MemberManagementPage(),
         PlusPage(title: 'plus',)
         ],
@@ -152,3 +161,4 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
         (route) => false);
   }
 }
+
