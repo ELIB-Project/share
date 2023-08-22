@@ -17,19 +17,31 @@ double mediaWidth(BuildContext context, double scale) =>
 
 double topFontSize = 20;
 
+String textA = "";
+String textB = "";
+String textC = "";
+String textD = "";
+String textE = "";
+
+Color colorB = Colors.grey.shade600;
+Color colorC = Colors.grey.shade600;
+Color colorD = Colors.grey.shade600;
+
 class trainList {
   final int id;
   final String? name;
   final List? imgUrl;
   final List? videoUrl;
-  final bool? complete;
+  bool? imgComplete;
+  bool? videoComplete;
 
   trainList({
     required this.id,
     required this.name,
     required this.imgUrl,
     required this.videoUrl,
-    required this.complete,
+    required this.imgComplete,
+    required this.videoComplete,
   });
 
   factory trainList.fromJson(Map<String, dynamic> json) {
@@ -38,13 +50,17 @@ class trainList {
       name: json['name'],
       imgUrl: json['imgUrl'],
       videoUrl: json['videoUrl'],
-      complete: json['complete'],
+      imgComplete: json['imgComplete'],
+      videoComplete: json['videoComplete'],
     );
   }
 }
 
+
+int? allTrainCount;
+int? trainCount;
+
 Future<int> loadTrainCount() async {
-  // 헤더에 access토큰 첨부를 위해 토큰 불러오기
   final storage = FlutterSecureStorage();
   final accessToken = await storage.read(key: 'ACCESS_TOKEN');
   var dio = await authDio();
@@ -57,9 +73,6 @@ Future<int> loadTrainCount() async {
     throw Exception('fail');
   }
 }
-
-int? allTrainCount;
-int? trainCount;
 
 Future<List<trainList>> loadTrainList() async {
   final storage = FlutterSecureStorage();
@@ -80,7 +93,32 @@ Future<List<trainList>> loadTrainList() async {
       allTrainCount = list.length;
     }
     init();
+
     trainCount = (allTrainCount! - await loadTrainCount());
+
+    void text() async {
+    if(trainCount! == 0) {
+      textA = "";
+      textB = "모든 훈련을 ";
+      textC = "이수완료 ";
+      textD = "했습니다.";
+      textE = "";
+
+      colorB = Colors.grey.shade600;
+      colorC = Colors.green;
+      colorD = Colors.grey.shade600;
+    } else if (trainCount! > 0) {
+      textA = "총 ";
+      textB = "$trainCount";
+      textC = "개의 훈련이 ";
+      textD = "미이수";
+      textE = " 상태입니다.";
+
+      colorB = Colors.red;
+      colorD = Colors.red;
+    } 
+  }
+  text();
 
     return list;
   } else {
@@ -110,45 +148,12 @@ class _trainPageState extends State<trainPage>{
     });
   }
 
-  String textA = "";
-  String textB = "";
-  String textC = "";
-  String textD = "";
-  String textE = "";
-
-  Color colorB = Colors.grey.shade600;
-  Color colorC = Colors.grey.shade600;
-  Color colorD = Colors.grey.shade600;
-
   @override
   void initState() {
-    init();
+    futureTrainList = loadTrainList();
     super.initState();
   }
-
-  void init() async {
-    futureTrainList = loadTrainList();
-    text();
-  }
-
-  void text() async {
-    if (trainCount! > 0) {
-      textA = "총 ";
-      textB = "$trainCount";
-      textC = "개의 훈련이 ";
-      textD = "미이수";
-      textE = " 상태입니다.";
-
-      colorB = Colors.red;
-      colorD = Colors.red;
-    } else if(trainCount! == 0) {
-      textB = "모든 훈련을 ";
-      textC = "이수완료 ";
-      textD = "했습니다.";
-
-      colorC = Colors.green;
-    }
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -206,43 +211,48 @@ class _trainPageState extends State<trainPage>{
                             child: Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text.rich(TextSpan(children: [
-                                  TextSpan(
-                                      text: textA,
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: topFontSize,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                  TextSpan(
-                                      text: textB,
-                                      style: TextStyle(
-                                        color: colorB,
-                                        fontSize: topFontSize,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                  TextSpan(
-                                      text: textC,
-                                      style: TextStyle(
-                                        color: colorC,
-                                        fontSize: topFontSize,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                  TextSpan(
-                                      text: textD,
-                                      style: TextStyle(
-                                        color: colorD,
-                                        fontSize: topFontSize,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                  TextSpan(
-                                      text: textE,
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontSize: topFontSize,
-                                        fontWeight: FontWeight.bold,
-                                      )),
-                                ])),
+                                FutureBuilder<List<trainList>>(
+                                  future: futureTrainList,
+                                  builder: (context, snapshot) {
+                                    return Text.rich(TextSpan(children: [
+                                      TextSpan(
+                                          text: textA,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: topFontSize,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                      TextSpan(
+                                          text: textB,
+                                          style: TextStyle(
+                                            color: colorB,
+                                            fontSize: topFontSize,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                      TextSpan(
+                                          text: textC,
+                                          style: TextStyle(
+                                            color: colorC,
+                                            fontSize: topFontSize,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                      TextSpan(
+                                          text: textD,
+                                          style: TextStyle(
+                                            color: colorD,
+                                            fontSize: topFontSize,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                      TextSpan(
+                                          text: textE,
+                                          style: TextStyle(
+                                            color: Colors.grey.shade600,
+                                            fontSize: topFontSize,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                    ]));
+                                  }
+                                ),
                               ],
                             ),
                           )),
@@ -322,8 +332,9 @@ class _trainPageState extends State<trainPage>{
                                                         IconData? iconName;
                                                         int iconColor;
 
-                                                        bool? complete = snapshot.data?[i].complete;
-                                                        if(complete == true) {
+                                                        bool? imgComplete = snapshot.data?[i].imgComplete;
+                                                        bool? videoComplete = snapshot.data?[i].videoComplete;
+                                                        if(imgComplete == true && videoComplete == true) {
                                                           iconName = Icons.check_circle;
                                                         iconColor = 0xFF38AE5D;
                                                         } else {
@@ -413,7 +424,10 @@ class _trainPageState extends State<trainPage>{
                                           ),
                                         ],
                                       );
-                                    return CircularProgressIndicator();
+                                    return Visibility(
+                                      visible: false,
+                                      child: CircularProgressIndicator())
+                                      ;
                                   }),
                             ],
                           ),
