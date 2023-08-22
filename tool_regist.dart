@@ -14,8 +14,10 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
 import 'dart:convert';
 
+String apiUrl = "http://test.elibtest.r-e.kr:8080/api/v1/media/qr";
+
 class importTool {
-  int? toolId;
+  String? toolId;
   String? mfd;
   String? exp;
   String? locate;
@@ -128,52 +130,113 @@ class _toolRegistPageState extends State<toolRegistPage> {
     String? barcode = await scanner.scan();
     //스캔 완료하면 _output 에 문자열 저장하면서 상태 변경 요청.
     setState(() => _output = barcode!);
+
+    _output = _output!.substring(apiUrl.length);
+    _output = _output!.replaceAll('?', '{"');
+    _output = _output!.replaceAll('=', '":"');
+    _output = _output!.replaceAll('&', '","');
+    _output = _output! + '"}';
     print(_output);
 
-    Map<String, dynamic> temp = jsonDecode(_output!);
-    importTool tool = importTool.fromJson(temp);
-
-    print("load-------------------------------");
-    //print(tool.toolId);
-    //print(temp['toolId']);
-
-    //도구 id값 있는지 통신
-    final storage = FlutterSecureStorage();
-    final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-    var dio = await authDio();
-    dio.options.headers['Authorization'] = '$accessToken';
+    Map<String, dynamic> temp;
+    importTool tool;
 
     try {
-      final response = await dio.get('/api/v1/tool/${tool.toolId}');
-      if (response.statusCode == 200) {
-        print("query-------------------------------");
-        print(response);
+      temp = jsonDecode(_output!);
+      tool = importTool.fromJson(temp);
 
-        checkTool check = checkTool.fromJson(response.data);
-        tool.name = check.name;
-        tool.toolExplain = check.toolExplain;
-        tool.maker = check.maker;
+          //도구 id값 있는지 통신
+        final storage = FlutterSecureStorage();
+        final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+        var dio = await authDio();
+        dio.options.headers['Authorization'] = '$accessToken';
 
-        Navigator.pop(context);
-        Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (context) => qrDefaultToolPage(
-                      tool: tool,
-                      count: 0,
-                    ))).then((value) {});
-      }
-    } catch (e) {
-      print("catch------------------------");
+        try {
+          final response = await dio.get('/api/v1/tool/${tool.toolId}');
+          if (response.statusCode == 200) {
+            print("query-------------------------------");
+            print(response);
 
+            checkTool check = checkTool.fromJson(response.data);
+            tool.name = check.name;
+            tool.toolExplain = check.toolExplain;
+            tool.maker = check.maker;
+
+            Navigator.pop(context);
+            Navigator.push(
+                context,
+                MaterialPageRoute( 
+                    builder: (context) => qrDefaultToolPage(
+                          tool: tool,
+                          count: 0,
+                        ))).then((value) {});
+          }
+        } catch (e) {
+          print("catch------------------------");
+
+          showDialog(
+            context: context,
+            barrierDismissible: true, //바깥 영역 터치시 닫을지 여부 결정
+            builder: ((context) {
+              return AlertDialog(
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(5))),
+                //title: Text("제목"),
+                content: Text(
+                  'Qr을 지원하지 않는 도구입니다.',
+                  style: TextStyle(
+                    fontSize: 17,
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                actions: <Widget>[
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 5),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          width: mediaWidth(context, 0.15),
+                          height: 35,
+                          child: TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pop(); //창 닫기
+                            },
+                            child: Text(
+                              '확인',
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 13,
+                                fontWeight: FontWeight.normal,
+                              ),
+                            ),
+                            style: ButtonStyle(
+                              backgroundColor: MaterialStateProperty.all(
+                                  const Color.fromARGB(255, 255, 255, 255)),
+                              shape:
+                                  MaterialStateProperty.all<RoundedRectangleBorder>(
+                                      RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(5),
+                              )),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            }),
+          );
+        } 
+    } catch(e) {
       showDialog(
         context: context,
         barrierDismissible: true, //바깥 영역 터치시 닫을지 여부 결정
         builder: ((context) {
           return AlertDialog(
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(5))
-            ),
+                borderRadius: BorderRadius.all(Radius.circular(5))),
             //title: Text("제목"),
             content: Text(
               'Qr을 지원하지 않는 도구입니다.',
@@ -204,9 +267,11 @@ class _toolRegistPageState extends State<toolRegistPage> {
                           ),
                         ),
                         style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(const Color.fromARGB(255, 255, 255, 255)),
-                          shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                              RoundedRectangleBorder(
+                          backgroundColor: MaterialStateProperty.all(
+                              const Color.fromARGB(255, 255, 255, 255)),
+                          shape:
+                              MaterialStateProperty.all<RoundedRectangleBorder>(
+                                  RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(5),
                           )),
                         ),
@@ -220,6 +285,13 @@ class _toolRegistPageState extends State<toolRegistPage> {
         }),
       );
     }
+    
+
+    print("load-------------------------------");
+    //print(tool.toolId);
+    //print(temp['toolId']);
+
+    
   }
 
   Future<bool> permission() async {
@@ -290,7 +362,8 @@ class _toolRegistPageState extends State<toolRegistPage> {
                   Expanded(
                     child: SingleChildScrollView(
                       child: Padding(
-                        padding: const EdgeInsets.only(top: 0, left: 20, right: 20),
+                        padding:
+                            const EdgeInsets.only(top: 0, left: 20, right: 20),
                         child: Form(
                           key: _formKey,
                           child: Column(
@@ -300,7 +373,6 @@ class _toolRegistPageState extends State<toolRegistPage> {
                               SizedBox(
                                 height: mediaHeight(context, 0.03),
                               ),
-                  
                               Text.rich(TextSpan(children: [
                                 TextSpan(
                                     text: ' 제품명',
@@ -330,13 +402,13 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                     },
                                     validator: (value) {
                                       int length = value!.length;
-                                                
+
                                       if (buttonCount == 1) {
                                         if (length < 1) {
                                           return '필수 입력란입니다.';
                                         }
                                       }
-                                                
+
                                       return null;
                                     },
                                     decoration: InputDecoration(
@@ -346,21 +418,22 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                         borderRadius: BorderRadius.circular(5),
                                       ),
                                       focusedBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.all(Radius.circular(5)),
-                                        borderSide:
-                                            BorderSide(width: 2, color: Colors.black),
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(5)),
+                                        borderSide: BorderSide(
+                                            width: 2, color: Colors.black),
                                       ),
                                       errorBorder: OutlineInputBorder(
                                         borderRadius: BorderRadius.circular(5),
                                       ),
                                       focusedErrorBorder: OutlineInputBorder(
-                                        borderRadius:
-                                            BorderRadius.all(Radius.circular(5)),
-                                        borderSide:
-                                            BorderSide(width: 2, color: Colors.black),
+                                        borderRadius: BorderRadius.all(
+                                            Radius.circular(5)),
+                                        borderSide: BorderSide(
+                                            width: 2, color: Colors.black),
                                       ),
-                                      errorStyle: TextStyle(color: Colors.green),
+                                      errorStyle:
+                                          TextStyle(color: Colors.green),
                                       contentPadding: EdgeInsets.only(
                                           left: 10,
                                           bottom: 0,
@@ -373,11 +446,9 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                   ),
                                 ),
                               ),
-                  
                               SizedBox(
                                 height: mediaHeight(context, 0.04),
                               ),
-                  
                               Text(
                                 ' 상세정보',
                                 style: TextStyle(
@@ -400,8 +471,8 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                     focusedBorder: OutlineInputBorder(
                                       borderRadius:
                                           BorderRadius.all(Radius.circular(5)),
-                                      borderSide:
-                                          BorderSide(width: 2, color: Colors.black),
+                                      borderSide: BorderSide(
+                                          width: 2, color: Colors.black),
                                     ), //검색 아이콘 추가
                                     contentPadding: EdgeInsets.only(
                                         left: 10,
@@ -414,11 +485,9 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                   ),
                                 ),
                               ),
-                  
                               SizedBox(
                                 height: mediaHeight(context, 0.04),
-                              ), 
-                  
+                              ),
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -441,10 +510,11 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                       decoration: InputDecoration(
                                         isDense: true,
                                         enabledBorder: OutlineInputBorder(
-                                            borderRadius: BorderRadius.circular(5)),
+                                            borderRadius:
+                                                BorderRadius.circular(5)),
                                         focusedBorder: OutlineInputBorder(
-                                          borderRadius:
-                                              BorderRadius.all(Radius.circular(5)),
+                                          borderRadius: BorderRadius.all(
+                                              Radius.circular(5)),
                                           borderSide: BorderSide(
                                               width: 2, color: Colors.black),
                                         ),
@@ -461,11 +531,9 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                   ),
                                 ],
                               ),
-                  
                               SizedBox(
                                 height: mediaHeight(context, 0.04),
                               ),
-                  
                               Column(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -478,79 +546,79 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                       fontSize: 15,
                                     ),
                                   ),
-                                        Padding(
-                                          padding: const EdgeInsets.only(top: 5),
-                                          child: SizedBox(
-                                              height: tempHeight,
-                                              child: Container(
-                                                decoration: BoxDecoration(
-                                                  border: Border.all(
-                                                    width: 1,
-                                                    color: Colors.black,
-                                                  ),
-                                                  borderRadius:
-                                                      BorderRadius.circular(5),
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 5),
+                                    child: SizedBox(
+                                        height: tempHeight,
+                                        child: Container(
+                                          decoration: BoxDecoration(
+                                            border: Border.all(
+                                              width: 1,
+                                              color: Colors.black,
+                                            ),
+                                            borderRadius:
+                                                BorderRadius.circular(5),
+                                          ),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              IconButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    if (count > 0) {
+                                                      count--;
+                                                    }
+                                                  });
+                                                },
+                                                icon: Icon(
+                                                  Icons.remove,
+                                                  size: 18,
+                                                  color: Colors.black,
                                                 ),
-                                                child: Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment
-                                                          .spaceBetween,
-                                                  children: [
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          if (count > 0) {
-                                                            count--;
-                                                          }
-                                                        });
-                                                      },
-                                                      icon: Icon(
-                                                        Icons.remove,
-                                                        size: 18,
-                                                        color: Colors.black,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      count.toString(),
-                                                      style: TextStyle(
-                                                        color: Colors.black,
-                                                        fontSize: 20,
-                                                      ),
-                                                    ),
-                                                    IconButton(
-                                                      onPressed: () {
-                                                        setState(() {
-                                                          count++;
-                                                        });
-                                                      },
-                                                      icon: Icon(
-                                                        Icons.add,
-                                                        size: 18,
-                                                        color: Colors.black,
-                                                      ),
-                                                    ),
-                                                  ],
+                                              ),
+                                              Text(
+                                                count.toString(),
+                                                style: TextStyle(
+                                                  color: Colors.black,
+                                                  fontSize: 20,
                                                 ),
-                                              )),
-                                        ),
+                                              ),
+                                              IconButton(
+                                                onPressed: () {
+                                                  setState(() {
+                                                    count++;
+                                                  });
+                                                },
+                                                icon: Icon(
+                                                  Icons.add,
+                                                  size: 18,
+                                                  color: Colors.black,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        )),
+                                  ),
                                 ],
                               ),
-                  
                               SizedBox(
                                 height: mediaHeight(context, 0.05),
                               ),
-                  
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
                                   SizedBox(
                                     height: 110,
-                                    width:
-                                        (MediaQuery.of(context).size.width - 60) /
-                                            2,
+                                    width: (MediaQuery.of(context).size.width -
+                                            60) /
+                                        2,
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text.rich(TextSpan(children: [
                                           TextSpan(
@@ -562,7 +630,8 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                               )),
                                         ])),
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 5),
+                                          padding:
+                                              const EdgeInsets.only(top: 5),
                                           child: SizedBox(
                                             child: TextFormField(
                                               //key: _containerkey,
@@ -576,31 +645,34 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                               },
                                               validator: (value) {
                                                 int length = value!.length;
-                  
+
                                                 if (length == 0) {
                                                   return null;
                                                 }
-                  
+
                                                 if (length < 10) {
                                                   return "날짜 형식을 확인해주세요.";
                                                 } else {
-                                                  int year = int.parse(value[0] +
-                                                      value[1] +
-                                                      value[2] +
-                                                      value[3]);
-                  
-                                                  if (year < 2022 || year > 2100) {
+                                                  int year = int.parse(
+                                                      value[0] +
+                                                          value[1] +
+                                                          value[2] +
+                                                          value[3]);
+
+                                                  if (year < 2022 ||
+                                                      year > 2100) {
                                                     return "날짜 형식을 확인해주세요.";
                                                   } else {
                                                     int month = int.parse(
                                                         value[5] + value[6]);
-                  
-                                                    if (month < 1 || month > 12) {
+
+                                                    if (month < 1 ||
+                                                        month > 12) {
                                                       return "날짜 형식을 확인해주세요.";
                                                     } else {
                                                       int day = int.parse(
                                                           value[8] + value[9]);
-                  
+
                                                       if (month == 1 ||
                                                           month == 3 ||
                                                           month == 5 ||
@@ -608,27 +680,33 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                           month == 8 ||
                                                           month == 10 ||
                                                           month == 12) {
-                                                        if (day < 1 || day > 31) {
+                                                        if (day < 1 ||
+                                                            day > 31) {
                                                           return "날짜 형식을 확인해주세요.";
                                                         }
                                                       } else if (month == 4 ||
                                                           month == 6 ||
                                                           month == 9 ||
                                                           month == 11) {
-                                                        if (day < 1 || day > 30) {
+                                                        if (day < 1 ||
+                                                            day > 30) {
                                                           return "날짜 형식을 확인해주세요.";
                                                         }
                                                       } else {
                                                         if (((year % 4) == 0 &&
-                                                                (year % 100) != 0 ||
-                                                            (year % 400) == 0)) {
+                                                                (year % 100) !=
+                                                                    0 ||
+                                                            (year % 400) ==
+                                                                0)) {
                                                           //윤년
-                                                          if (day < 1 || day > 29) {
+                                                          if (day < 1 ||
+                                                              day > 29) {
                                                             return "날짜 형식을 확인해주세요.";
                                                           }
                                                         } else {
                                                           //평년
-                                                          if (day < 1 || day > 28) {
+                                                          if (day < 1 ||
+                                                              day > 28) {
                                                             return "날짜 형식을 확인해주세요.";
                                                           }
                                                         }
@@ -638,22 +716,28 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                 }
                                                 return null;
                                               },
-                                              keyboardType: TextInputType.number,
+                                              keyboardType:
+                                                  TextInputType.number,
                                               inputFormatters: [
                                                 FilteringTextInputFormatter
                                                     .digitsOnly,
-                                                LengthLimitingTextInputFormatter(8),
+                                                LengthLimitingTextInputFormatter(
+                                                    8),
                                                 NumberFormatter(),
                                               ],
                                               decoration: InputDecoration(
                                                 isDense: true,
                                                 border: InputBorder.none,
-                                                enabledBorder: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(5)),
-                                                focusedBorder: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5)),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(5)),
                                                   borderSide: BorderSide(
                                                       width: 2,
                                                       color: Colors.black),
@@ -664,14 +748,15 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                 ),
                                                 focusedErrorBorder:
                                                     OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5)),
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(5)),
                                                   borderSide: BorderSide(
                                                       width: 2,
                                                       color: Colors.black),
                                                 ),
-                                                errorStyle:
-                                                    TextStyle(color: Colors.green),
+                                                errorStyle: TextStyle(
+                                                    color: Colors.green),
                                                 contentPadding: EdgeInsets.only(
                                                     left: 10,
                                                     bottom: 0,
@@ -691,15 +776,16 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                       ],
                                     ),
                                   ),
-                                  
                                   SizedBox(
                                     height: 110,
-                                    width:
-                                        (MediaQuery.of(context).size.width - 60) /
-                                            2,
+                                    width: (MediaQuery.of(context).size.width -
+                                            60) /
+                                        2,
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.start,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Text.rich(TextSpan(children: [
                                           TextSpan(
@@ -711,7 +797,8 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                               )),
                                         ])),
                                         Padding(
-                                          padding: const EdgeInsets.only(top: 5),
+                                          padding:
+                                              const EdgeInsets.only(top: 5),
                                           child: SizedBox(
                                             child: TextFormField(
                                               //key: _containerkey,
@@ -725,31 +812,34 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                               },
                                               validator: (value) {
                                                 int length = value!.length;
-                  
+
                                                 if (length == 0) {
                                                   return null;
                                                 }
-                  
+
                                                 if (length < 10) {
                                                   return "날짜 형식을 확인해주세요.";
                                                 } else {
-                                                  int year = int.parse(value[0] +
-                                                      value[1] +
-                                                      value[2] +
-                                                      value[3]);
-                  
-                                                  if (year < 2022 || year > 2100) {
+                                                  int year = int.parse(
+                                                      value[0] +
+                                                          value[1] +
+                                                          value[2] +
+                                                          value[3]);
+
+                                                  if (year < 2022 ||
+                                                      year > 2100) {
                                                     return "날짜 형식을 확인해주세요.";
                                                   } else {
                                                     int month = int.parse(
                                                         value[5] + value[6]);
-                  
-                                                    if (month < 1 || month > 12) {
+
+                                                    if (month < 1 ||
+                                                        month > 12) {
                                                       return "날짜 형식을 확인해주세요.";
                                                     } else {
                                                       int day = int.parse(
                                                           value[8] + value[9]);
-                  
+
                                                       if (month == 1 ||
                                                           month == 3 ||
                                                           month == 5 ||
@@ -757,27 +847,33 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                           month == 8 ||
                                                           month == 10 ||
                                                           month == 12) {
-                                                        if (day < 1 || day > 31) {
+                                                        if (day < 1 ||
+                                                            day > 31) {
                                                           return "날짜 형식을 확인해주세요.";
                                                         }
                                                       } else if (month == 4 ||
                                                           month == 6 ||
                                                           month == 9 ||
                                                           month == 11) {
-                                                        if (day < 1 || day > 30) {
+                                                        if (day < 1 ||
+                                                            day > 30) {
                                                           return "날짜 형식을 확인해주세요.";
                                                         }
                                                       } else {
                                                         if (((year % 4) == 0 &&
-                                                                (year % 100) != 0 ||
-                                                            (year % 400) == 0)) {
+                                                                (year % 100) !=
+                                                                    0 ||
+                                                            (year % 400) ==
+                                                                0)) {
                                                           //윤년
-                                                          if (day < 1 || day > 29) {
+                                                          if (day < 1 ||
+                                                              day > 29) {
                                                             return "날짜 형식을 확인해주세요.";
                                                           }
                                                         } else {
                                                           //평년
-                                                          if (day < 1 || day > 28) {
+                                                          if (day < 1 ||
+                                                              day > 28) {
                                                             return "날짜 형식을 확인해주세요.";
                                                           }
                                                         }
@@ -787,22 +883,28 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                 }
                                                 return null;
                                               },
-                                              keyboardType: TextInputType.number,
+                                              keyboardType:
+                                                  TextInputType.number,
                                               inputFormatters: [
                                                 FilteringTextInputFormatter
                                                     .digitsOnly,
-                                                LengthLimitingTextInputFormatter(8),
+                                                LengthLimitingTextInputFormatter(
+                                                    8),
                                                 NumberFormatter(),
                                               ],
                                               decoration: InputDecoration(
                                                 isDense: true,
                                                 border: InputBorder.none,
-                                                enabledBorder: OutlineInputBorder(
-                                                    borderRadius:
-                                                        BorderRadius.circular(5)),
-                                                focusedBorder: OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5)),
+                                                enabledBorder:
+                                                    OutlineInputBorder(
+                                                        borderRadius:
+                                                            BorderRadius
+                                                                .circular(5)),
+                                                focusedBorder:
+                                                    OutlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(5)),
                                                   borderSide: BorderSide(
                                                       width: 2,
                                                       color: Colors.black),
@@ -813,14 +915,15 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                                 ),
                                                 focusedErrorBorder:
                                                     OutlineInputBorder(
-                                                  borderRadius: BorderRadius.all(
-                                                      Radius.circular(5)),
+                                                  borderRadius:
+                                                      BorderRadius.all(
+                                                          Radius.circular(5)),
                                                   borderSide: BorderSide(
                                                       width: 2,
                                                       color: Colors.black),
                                                 ),
-                                                errorStyle:
-                                                    TextStyle(color: Colors.green),
+                                                errorStyle: TextStyle(
+                                                    color: Colors.green),
                                                 contentPadding: EdgeInsets.only(
                                                     left: 10,
                                                     bottom: 0,
@@ -842,8 +945,6 @@ class _toolRegistPageState extends State<toolRegistPage> {
                                   ),
                                 ],
                               ),
-
-                              
                             ],
                           ),
                         ),
@@ -857,12 +958,12 @@ class _toolRegistPageState extends State<toolRegistPage> {
                       child: ElevatedButton(
                         onPressed: () async {
                           buttonCount = 1;
-                  
+
                           if (_formKey.currentState!.validate()) {
                             final storage = FlutterSecureStorage();
                             final accessToken =
                                 await storage.read(key: 'ACCESS_TOKEN');
-                  
+
                             var dio = await authDio();
                             dio.options.headers['Authorization'] =
                                 '$accessToken';
@@ -875,7 +976,7 @@ class _toolRegistPageState extends State<toolRegistPage> {
                               "exp": exp,
                               "mfd": mfd,
                             });
-                  
+
                             if (response.statusCode == 200) {
                               Navigator.pushAndRemoveUntil(
                                   context,
