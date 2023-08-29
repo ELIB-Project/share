@@ -1,6 +1,6 @@
-import 'package:elib_project/pages/plus_page.dart';
-import 'package:elib_project/pages/name_auth_page.dart';
+import 'dart:convert';
 import 'package:elib_project/pages/select_member_page.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
@@ -8,6 +8,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../auth_dio.dart';
 
 List<familyName> selectedIds = [];
+List<int> sendid = [];
 
 class GroupAddPage extends StatefulWidget {
   const GroupAddPage({
@@ -21,7 +22,7 @@ class GroupAddPage extends StatefulWidget {
 class GroupAddPageState extends State<GroupAddPage> {
   bool isButtonEnabled = false;
   bool isAuthButtonClicked = false;
-
+  String categoryname = "";
   late FocusNode _textFieldFocusNode;
 
   @override
@@ -70,130 +71,126 @@ class GroupAddPageState extends State<GroupAddPage> {
           ),
         ),
         body: SafeArea(
-            child: GestureDetector(
-          onTap: () => FocusScope.of(context).unfocus(),
-          child: SingleChildScrollView(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.fromLTRB(querywidth * 0.05, 0,
-                      querywidth * 0.05, queryheight * 0.01),
-                  child: Text(
-                    "그룹 이름을 입력해 주세요",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                SizedBox(
-                  child: Padding(
-                    padding: EdgeInsets.fromLTRB(
-                        querywidth * 0.05, 0, querywidth * 0.05, 10),
-                    child: TextFormField(
-                      inputFormatters: [
-                        LengthLimitingTextInputFormatter(
-                            4) //4자리만 입력받도록 하이픈 2개+숫자 11개
-                      ],
-                      autovalidateMode: AutovalidateMode.always,
-                      onChanged: (value) {
-                        setState(() {
-                          name = value;
-                          isButtonEnabled = value.length > 1;
-                        });
-                      },
-                      onSaved: (value) {
-                        name = value as String;
-                      },
-                      validator: (value) {
-                        int length = value!.length;
-
-                        if (length < 2 && length > 0) {
-                          return '이름을 2자 이상 입력해주세요';
-                        }
-
-                        return null;
-                      },
-                      decoration: InputDecoration(
-                        hintText: '그룹 이름',
-                        hintStyle: TextStyle(
-                          color: Colors.grey,
-                        ),
-                        border: InputBorder.none,
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                          borderSide: BorderSide(width: 2, color: Colors.black),
-                        ),
-                        errorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                          borderSide: BorderSide(width: 2, color: Colors.red),
-                        ),
-                        focusedErrorBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10.0)),
-                          borderSide: BorderSide(width: 2, color: Colors.red),
-                        ),
-                        errorStyle: TextStyle(color: Colors.red),
-                        contentPadding: EdgeInsets.only(
-                            left: 10, bottom: 10, top: 10, right: 5),
-                      ),
-                      style: TextStyle(
-                        decorationThickness: 0,
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(querywidth * 0.05, 10,
-                      querywidth * 0.05, queryheight * 0.01),
-                  child: Text(
-                    "그룹 구성원을 추가해주세요",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                ),
-                InkWell(
-                  onTap: () async {
-                    selectedIds = await Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const SelectMember(),
-                      ),
-                    );
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  querywidth * 0.05, 0, querywidth * 0.05, queryheight * 0.01),
+              child: Text(
+                "그룹 이름을 입력해 주세요",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            SizedBox(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                    querywidth * 0.05, 0, querywidth * 0.05, 10),
+                child: TextFormField(
+                  inputFormatters: [
+                    LengthLimitingTextInputFormatter(
+                        4) //4자리만 입력받도록 하이픈 2개+숫자 11개
+                  ],
+                  autovalidateMode: AutovalidateMode.always,
+                  onChanged: (value) {
                     setState(() {
-                      selectedIds;
+                      categoryname = value;
+                      isButtonEnabled = value.length > 1;
                     });
                   },
-                  child: SizedBox(
-                      width: querywidth,
-                      child: Padding(
-                        padding:
-                            EdgeInsets.fromLTRB(querywidth * 0.05, 10, 10, 10),
-                        child: Row(
-                          children: [
-                            Padding(
-                              padding: const EdgeInsets.only(right: 10.0),
-                              child: Container(
-                                  decoration: const ShapeDecoration(
-                                    color: Colors.black12,
-                                    shape: CircleBorder(),
-                                  ),
-                                  child: Icon(Icons.add)),
-                            ),
-                            const Text(
-                              "그룹원 추가",
-                              style: TextStyle(
-                                  fontSize: 18, fontWeight: FontWeight.bold),
-                            )
-                          ],
-                        ),
-                      )),
+                  onSaved: (value) {
+                    categoryname = value as String;
+                  },
+                  validator: (value) {
+                    int length = value!.length;
+
+                    if (length < 2 && length > 0) {
+                      return '이름을 2자 이상 입력해주세요';
+                    }
+
+                    return null;
+                  },
+                  decoration: InputDecoration(
+                    hintText: '그룹 이름',
+                    hintStyle: TextStyle(
+                      color: Colors.grey,
+                    ),
+                    border: InputBorder.none,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                      borderSide: BorderSide(width: 2, color: Colors.black),
+                    ),
+                    errorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(10),
+                      borderSide: BorderSide(width: 2, color: Colors.red),
+                    ),
+                    focusedErrorBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                      borderSide: BorderSide(width: 2, color: Colors.red),
+                    ),
+                    errorStyle: TextStyle(color: Colors.red),
+                    contentPadding: EdgeInsets.only(
+                        left: 10, bottom: 10, top: 10, right: 5),
+                  ),
+                  style: TextStyle(
+                    decorationThickness: 0,
+                  ),
                 ),
-                ListBuild(
-                  receivedIds: selectedIds,
-                )
-              ],
+              ),
             ),
-          ),
+            Padding(
+              padding: EdgeInsets.fromLTRB(
+                  querywidth * 0.05, 10, querywidth * 0.05, queryheight * 0.01),
+              child: Text(
+                "그룹 구성원을 추가해주세요",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            InkWell(
+              onTap: () async {
+                selectedIds = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SelectMember(),
+                  ),
+                );
+                setState(() {
+                  selectedIds;
+                });
+              },
+              child: SizedBox(
+                  width: querywidth,
+                  child: Padding(
+                    padding: EdgeInsets.fromLTRB(querywidth * 0.05, 10, 10, 10),
+                    child: Row(
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.only(right: 10.0),
+                          child: Container(
+                              decoration: const ShapeDecoration(
+                                color: Colors.black12,
+                                shape: CircleBorder(),
+                              ),
+                              child: Icon(Icons.add)),
+                        ),
+                        const Text(
+                          "그룹원 추가",
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        )
+                      ],
+                    ),
+                  )),
+            ),
+            Expanded(
+              child: ListBuild(
+                receivedIds: selectedIds,
+              ),
+            )
+          ],
         )),
         bottomSheet: SafeArea(
           child: Container(
@@ -210,31 +207,18 @@ class GroupAddPageState extends State<GroupAddPage> {
               ),
               onPressed: isButtonEnabled
                   ? () async {
-                      if (await editNamesendData(name) == 200) {
+                      if (await addGroupsendData(categoryname) == 200) {
                         Navigator.pop(context, true);
                       }
                       // After authNumbersendData is executed, update the button state
                     }
                   : null,
-              child: Text('추가 완료'),
+              child: Text('추가완료'),
             ),
           ),
         ),
       ),
     );
-  }
-}
-
-editNamesendData(String name) async {
-  final storage = FlutterSecureStorage();
-  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-  var dio = await authDio();
-  dio.options.headers['Authorization'] = '$accessToken';
-  final response =
-      await dio.patch('/api/v1/user/name', queryParameters: {'name': name});
-  if (response.statusCode == 200) {
-    print(response.data);
-    return response.statusCode;
   }
 }
 
@@ -263,14 +247,83 @@ class ListBuild extends StatelessWidget {
       return ListView.builder(
         itemCount: receivedIds.length,
         itemBuilder: (BuildContext context, int index) {
-          int id = receivedIds[index].id;
-          String name = receivedIds[index].name;
           return ListTile(
-            title: Text('ID: $id, Name: $name'),
+            title: Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(10, 10, 20, 0),
+                  child: receivedIds[index].imgUrl == null
+                      ? Container(
+                          width: 50,
+                          height: 50,
+                          padding: const EdgeInsets.all(5.0),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: Colors.grey,
+                              width: 1.0,
+                            ),
+                          ),
+                          child: Center(
+                            child: Icon(
+                              Icons.person,
+                              size: 40,
+                              color: Colors.grey,
+                            ),
+                          ))
+                      : Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(width: 2, color: Colors.grey),
+                            image: DecorationImage(
+                                image: NetworkImage(receivedIds[index].imgUrl!),
+                                fit: BoxFit.cover),
+                          ),
+                        ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    receivedIds[index].nickname == null
+                        ? Text(
+                            '${receivedIds[index].name}님 ',
+                            style: const TextStyle(
+                                color: Color.fromRGBO(131, 131, 131, 1),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20),
+                          )
+                        : Text(
+                            '${receivedIds[index].nickname}님 ',
+                            style: const TextStyle(
+                                color: Color.fromRGBO(131, 131, 131, 1),
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20),
+                          ),
+                  ],
+                ),
+                const Spacer(), // Adds flexible space
+              ],
+            ),
+
             // Add other widget properties and styling as needed
           );
         },
       );
     }
+  }
+}
+
+addGroupsendData(String category) async {
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.patch('/api/v1/family/category',
+      data: jsonEncode({selectedIds}), queryParameters: {'category': category});
+  if (response.statusCode == 200) {
+    print(response.data);
+    return response.statusCode;
   }
 }
