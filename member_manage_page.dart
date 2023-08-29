@@ -10,7 +10,6 @@ import "package:kakao_flutter_sdk/kakao_flutter_sdk_share.dart";
 import "../auth_dio.dart";
 import "../models/bottom_app_bar.dart";
 
-
 class GlobalData {
   static double queryWidth = 0.0;
   static double queryHeight = 0.0;
