@@ -25,6 +25,15 @@ class MemberManagementPage extends StatefulWidget {
 }
 
 class _MemberManagementPageState extends State<MemberManagementPage> {
+
+    void _navigateToAddGroupPage() {
+    Navigator.push(
+            context, MaterialPageRoute(builder: (context) => GroupAddPage()))
+        .then((value) {
+      setState(() {});
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     GlobalData.queryHeight = MediaQuery.of(context).size.height;
@@ -75,7 +84,7 @@ class _MemberManagementPageState extends State<MemberManagementPage> {
             // ),
             Expanded(
                 child: Stack(children: [
-              VerticalTabBarLayout(),
+              VerticalTabBarLayout(navigateToAddGroupPage: _navigateToAddGroupPage),
               // ListBuild(context),
               Column(
                 mainAxisAlignment: MainAxisAlignment.end,
@@ -807,6 +816,9 @@ void _navigateToEditFamilyNamePage(
 }
 
 class VerticalTabBarLayout extends StatefulWidget {
+  const VerticalTabBarLayout({super.key, this.navigateToAddGroupPage});
+  final navigateToAddGroupPage;
+
   @override
   _VerticalTabBarLayoutState createState() => _VerticalTabBarLayoutState();
 }
@@ -816,6 +828,8 @@ class _VerticalTabBarLayoutState extends State<VerticalTabBarLayout>
   late TabController _tabController;
   List<String> tabNames = ['모든 구성원'];
   int _selectedIndex = 0; // Track the selected index
+
+
 
   @override
   void initState() {
@@ -879,7 +893,7 @@ class _VerticalTabBarLayoutState extends State<VerticalTabBarLayout>
                     ),
                   ElevatedButton(
                     onPressed: () {
-                      _navigateToAddGroupPage(context);
+                      widget.navigateToAddGroupPage();
                       // addTab();
                     },
                     child: Text('그룹 추가'),
@@ -904,11 +918,3 @@ class _VerticalTabBarLayoutState extends State<VerticalTabBarLayout>
   }
 }
 
-void _navigateToAddGroupPage(BuildContext context) {
-  // TODO: 더보기 페이지로 화면 전환
-  Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const GroupAddPage(),
-      )).then((value) {});
-}
