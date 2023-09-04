@@ -18,6 +18,146 @@ import 'package:uni_links/uni_links.dart';
 import '../models/bottom_app_bar.dart';
 import 'package:elib_project/pages/membermanagement_page.dart';
 
+//재난키트 화면 로딩 줄이기용
+
+late Future<List<defaultTool>> futureDefaultTool;
+late Future<List<customTool>> futureCustomTool;
+late Future<void> loadCategory;
+
+List toolCategories = [];
+String? selectedCategory;
+
+int? selectedLength = 0;
+int? selectedDefaultLength = 0;
+int? selectedCustomLength = 0;
+
+List<defaultTool>? allDefault;
+List<customTool>? allCustom;
+
+List<defaultTool> fire = [];
+List<defaultTool> emergent = [];
+List<defaultTool> quake = [];
+List<defaultTool> survive = [];
+List<defaultTool> war = [];
+List<defaultTool> flood = [];
+
+List<defaultTool>? defaultView;
+List<customTool>? customView;
+
+Future<List<defaultTool>> loadDefaultTool() async {
+  print("future default 시작"); 
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  print("access ${accessToken}");
+
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/user/tool/default');
+
+  if (response.statusCode == 200) {
+    List<dynamic> data = response.data;
+    List<defaultTool> list = data.map((dynamic e) => defaultTool.fromJson(e)).toList();
+
+    //토큰확인용
+    final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+    final refreshToken = await storage.read(key: 'REFRESH_TOKEN');
+    print("newaccess ${accessToken}");
+    print("newrefresh ${refreshToken}");
+
+    allDefault = list;
+    defaultView = allDefault;
+
+    loading(allDefault);
+
+    if (selectedCategory == "기타") {
+      selectedLength = 0;
+    } else {
+      switch (selectedCategory) {
+        case "전체":
+          selectedLength = allDefault?.length;
+          defaultView = allDefault;
+        case "화재":
+          selectedLength = fire?.length;
+          defaultView = fire;
+        case "응급":
+          selectedLength = emergent?.length;
+          defaultView = emergent;
+        case "지진":
+          selectedLength = quake?.length;
+          defaultView = quake;
+        case "생존":
+          selectedLength = survive?.length;
+          defaultView = survive;
+        case "전쟁":
+          selectedLength = war?.length;
+          defaultView = war;
+        case "수해":
+          selectedLength = flood?.length;
+          defaultView = flood;
+      }
+    }
+
+    print("future default 끝");
+
+    return list;
+  } else {
+    throw Exception('Failed to Load');
+  }
+}
+
+loading(list) async{
+
+    fire = [];
+    emergent = [];
+    quake = [];
+    survive = [];
+    war = [];
+    flood = [];
+
+    for(var i = 0; i < list.length; i++) {
+      switch (list[i].type) {
+        case "화재" : fire.add(list[i]);
+        case "응급" : emergent.add(list[i]);
+        case "지진" : quake.add(list[i]);
+        case "생존" : survive.add(list[i]);
+        case "전쟁" : war.add(list[i]);
+        case "수해" : flood.add(list[i]);
+      }
+    }
+}
+
+Future<List<customTool>> loadCustomTool() async {
+  print("future custom 시작");
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/user/tool/custom');
+
+  if (response.statusCode == 200) {
+    List<dynamic> data = response.data;
+    List<customTool> list =
+        data.map((dynamic e) => customTool.fromJson(e)).toList();
+
+    allCustom = list;
+
+    if(selectedCategory == "전체" || selectedCategory == "기타") {
+      selectedCustomLength = list.length;
+      customView = allCustom;
+    } else {
+      selectedCustomLength = 0;
+    }
+
+    print("future custom 끝");
+
+    return list;
+  } else {
+    throw Exception('Failed to Load');
+  }
+}
+///////////////////////////////////////////////////////////////////////
+
 double appBarHeight = 70;
 double mediaHeight(BuildContext context, double scale) =>
     (MediaQuery.of(context).size.height - appBarHeight) * scale;
@@ -236,6 +376,26 @@ class _HomePageState extends State<HomePage> {
     initUniLinks();
     futureScore = loadScore();
     futureFamilyScore = loadFamilyScore();
+
+    loadCategory = init();
+    futureDefaultTool = loadDefaultTool();
+    futureCustomTool = loadCustomTool();
+  }
+
+  Future<void> init() async {
+    String? toolStorage = await storage.read(key: 'Category_Tool');
+
+    if(toolStorage == null || toolStorage == "") {
+      toolCategories = ["전체", "화재", "응급", "지진", "생존", "전쟁", "수해", "기타"];
+      await storage.write(key: 'Category_Tool', value: jsonEncode(toolCategories));
+    } else {
+      toolCategories = jsonDecode(toolStorage!);
+    }
+
+    if(selectedCategory == null || selectedCategory == "") {
+      selectedCategory = toolCategories[0];
+    } else {
+    }
   }
 
   @override
