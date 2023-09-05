@@ -173,7 +173,7 @@ class _trainPageState extends State<trainPage>{
                 title: Title(
                     color: Color.fromRGBO(87, 87, 87, 1),
                     child: Text(
-                      '훈련 관리',
+                      '훈련',
                       style: TextStyle(
                         fontSize: 25,
                         fontWeight: FontWeight.bold,
@@ -424,9 +424,11 @@ class _trainPageState extends State<trainPage>{
                                           ),
                                         ],
                                       );
-                                    return Visibility(
-                                      visible: false,
-                                      child: CircularProgressIndicator())
+                                    return Center(
+                                      child: Visibility(
+                                        visible: true,
+                                        child: CircularProgressIndicator()),
+                                    )
                                       ;
                                   }),
                             ],
