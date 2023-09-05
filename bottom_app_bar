@@ -16,7 +16,8 @@ class BulidBottomAppBar extends StatefulWidget {
   State<BulidBottomAppBar> createState() => _BulidBottomAppBarState();
 }
 
-class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProviderStateMixin{
+class _BulidBottomAppBarState extends State<BulidBottomAppBar>
+    with TickerProviderStateMixin {
   late TabController _controller = TabController(length: 5, vsync: this);
 
   var index = 2;
@@ -41,88 +42,73 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: TabBarView(children: [
-        toolManagePage(),
-        trainPage(),
-        HomePage(changeIndex: changeIndex),
-        MemberManagementPage(),
-        PlusPage(title: 'plus',)
+      body: TabBarView(
+        children: [
+          toolManagePage(),
+          trainPage(),
+          HomePage(changeIndex: changeIndex),
+          MemberManagementPage(),
+          PlusPage(
+            title: 'plus',
+          )
         ],
         controller: _controller,
       ),
-
       bottomNavigationBar: DefaultTabController(
         length: 5,
         child: TabBar(
-            controller: _controller,
-            indicatorWeight: 4,
-            indicatorSize: TabBarIndicatorSize.label,
-            indicatorColor: Colors.green,
-            unselectedLabelColor: Colors.grey,
-            labelColor: Colors.black,
-            unselectedLabelStyle: TextStyle(
+          controller: _controller,
+          indicatorWeight: 4,
+          indicatorSize: TabBarIndicatorSize.label,
+          indicatorColor: Colors.green,
+          unselectedLabelColor: Colors.grey,
+          labelColor: Colors.black,
+          unselectedLabelStyle: TextStyle(
               color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
-            labelStyle: TextStyle(
+          labelStyle: TextStyle(
               color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
-     
-            tabs: [
-              Tab(
+          tabs: [
+            Tab(
                 icon: Icon(
                   Icons.construction,
                   size: iconSize,
                 ),
-                text: "도구관리"
-                
-              ),
-
-              Tab(
+                text: "재난키트"),
+            Tab(
                 icon: Icon(
-                  Icons.edit_document, 
+                  Icons.edit_document,
                   size: iconSize,
                 ),
-                text: "훈련관리"
-              ),
-
-              Tab(   
+                text: "훈련"),
+            Tab(
                 icon: Icon(
                   Icons.home,
                   size: iconSize,
                 ),
-                text: "홈"
-              ),
-
-
-              Tab(
+                text: "홈"),
+            Tab(
                 icon: Icon(
                   Icons.groups,
                   size: iconSize,
                 ),
-                text: "구성원관리"
-                
-              ),
-
-              Tab(
+                text: "구성원"),
+            Tab(
                 icon: Icon(
                   Icons.more_horiz,
                   size: iconSize,
                 ),
-                text: "더보기"
-              ),
-            ],
-            
-          ),
-          
-          
+                text: "더보기"),
+          ],
+        ),
       ),
-      
-    );    
+    );
   }
 
   /////안씀 ////////////////////
 
   void _navigateToToolManagementPage(BuildContext context) {
     // 도구관리 페이지
-     Navigator.pushAndRemoveUntil(
+    Navigator.pushAndRemoveUntil(
         context,
         MaterialPageRoute(builder: (BuildContext context) => toolManagePage()),
         (route) => false);
@@ -150,15 +136,19 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar> with TickerProvid
   void _navigateToMemberManagementPage(BuildContext context) {
     Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (BuildContext context) => MemberManagementPage()),
+        MaterialPageRoute(
+            builder: (BuildContext context) => MemberManagementPage()),
         (route) => false);
   }
 
   void _navigateToPlusPage(BuildContext context) {
     Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (BuildContext context) => PlusPage(title: 'plus',),),
+        MaterialPageRoute(
+          builder: (BuildContext context) => PlusPage(
+            title: 'plus',
+          ),
+        ),
         (route) => false);
   }
 }
-
