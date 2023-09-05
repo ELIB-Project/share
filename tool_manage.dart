@@ -23,7 +23,6 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
 import 'dart:convert';
 
-
 double appBarHeight = 40;
 double mediaHeight(BuildContext context, double scale) =>
     (MediaQuery.of(context).size.height - appBarHeight) * scale;
@@ -38,6 +37,13 @@ String getToday() {
   return strToday;
 }
 String today = gettoday.substring(0,4) + gettoday.substring(5,7) + gettoday.substring(8,10);
+
+IconData listIcon = Icons.format_list_bulleted;
+IconData detail = Icons.radio_button_checked;
+IconData brief = Icons.radio_button_unchecked;
+Color detailColor = Colors.green;
+Color briefColor = Colors.grey;
+double explainSize = 16;
 
 double fullWidth = 0;
 double categoryWidth = 70;
@@ -214,8 +220,9 @@ class toolManagePage extends StatefulWidget {
   State<toolManagePage> createState() => _toolManagePageState();
 }
 
-class _toolManagePageState extends State<toolManagePage> {
-  
+class _toolManagePageState extends State<toolManagePage> with AutomaticKeepAliveClientMixin{
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -223,7 +230,7 @@ class _toolManagePageState extends State<toolManagePage> {
     futureDefaultTool = loadDefaultTool();
     futureCustomTool = loadCustomTool();
     
-    super.initState();
+    //super.initState();
   }
 
   Future<void> init() async {
@@ -241,6 +248,9 @@ class _toolManagePageState extends State<toolManagePage> {
     if(selectedCategory == null || selectedCategory == "") {
       selectedCategory = toolCategories[0];
     } else {
+      if (toolCategories.contains(selectedCategory) == false) {
+        selectedCategory = toolCategories[0];
+      }
     }
 
     print("init함수 끝");
@@ -448,7 +458,8 @@ class _toolManagePageState extends State<toolManagePage> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-          colorSchemeSeed: Color.fromARGB(255, 255, 255, 255),
+          scaffoldBackgroundColor: Color.fromARGB(255, 250, 250, 250),
+          colorSchemeSeed: Color.fromARGB(0, 241, 241, 241),
           useMaterial3: true),
       home: GestureDetector(
         onTap: () {
@@ -473,14 +484,17 @@ class _toolManagePageState extends State<toolManagePage> {
                   icon: Icon(
                     Icons.visibility_outlined,
                     size: 30,
+                    color: Colors.grey.shade500,
                   ),
                   onPressed: () {
                     Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (context) => toolCategoryPage()))
-                        .then((value) {
+                                builder: (context) => toolCategoryPage())).then((value) {
                       setState(() {
+                        loadCategory = init();
+                        futureDefaultTool = loadDefaultTool();
+                        futureCustomTool = loadCustomTool();
                       });
                     });
                     //Navigator.push(context, MaterialPageRoute(builder: (context) => toolRegistPage()));
@@ -525,10 +539,11 @@ class _toolManagePageState extends State<toolManagePage> {
                             });
                           },
                           decoration: InputDecoration(
+                            isDense: true,
                             border: InputBorder.none,
                             focusedBorder: OutlineInputBorder(
                               borderRadius:
-                                  BorderRadius.all(Radius.circular(10.0)),
+                                  BorderRadius.all(Radius.circular(0)),
                               borderSide: BorderSide(
                                   width: 1, color: Colors.grey.shade500),
                             ),
@@ -551,10 +566,10 @@ class _toolManagePageState extends State<toolManagePage> {
                         ),
                       ),
                     ),
-              
+
                     SizedBox(
-                      height: mediaHeight(context, 0.01),
-                    ),
+                      height: mediaHeight(context, 0.01)
+                    ), 
               
                     //카테고리
                     Expanded(
@@ -567,9 +582,7 @@ class _toolManagePageState extends State<toolManagePage> {
                             width: categoryWidth,
                             child: Column(
                               children: [
-                                SizedBox(
-                                  height: 10,
-                                ),
+                                
                                 Expanded(
                                   //height: mediaHeight(context, 1) - 10,
                                   child: FutureBuilder<void>(
@@ -723,919 +736,1094 @@ class _toolManagePageState extends State<toolManagePage> {
               
                           //도구 출력
                           Expanded(
-                            child: SingleChildScrollView(
-                              // keyboardDismissBehavior:
-                              //     ScrollViewKeyboardDismissBehavior.onDrag,
-                              child: Column(
-                                children: [
-                                  FutureBuilder<List<defaultTool>>(
-                                      future: futureDefaultTool,
-                                      builder: (context, snapshot) {
-                                      
-                                        switch (selectedCategory) {
-                                          case "전체":
-                                            defaultView = allDefault;
-                                            customView = allCustom;
-                                          case "화재":
-                                            defaultView = fire;
-                                          case "응급":
-                                            defaultView = emergent;
-                                          case "지진":
-                                            defaultView = quake;
-                                          case "생존":
-                                            defaultView = survive;
-                                          case "전쟁":
-                                            defaultView = war;
-                                          case "수해":
-                                            defaultView = flood;
-                                          case "기타":
-                                            defaultView = allDefault;
-                                            customView = allCustom;
-                                        }
-              
-                                        if (snapshot.hasError)
-                                          return Text('${snapshot.error}');
-              
-                                        if(defaultView?.isEmpty == true && selectedLength == 0) {
-                                          print("defaultView is empty");
-                                          return Column(
-                                            children: [
-                                              Container(
-                                                child: Text("empty"),
-                                              )
-                                            ]
-                                          );
-                                        }
-              
-                                        if (defaultView != null) {
-                                          return Column(
-                                            children: [
-                                              Column(
-                                                mainAxisSize: MainAxisSize.min,
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.start,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                                  SizedBox(
-                                                      width: MediaQuery.of(context).size.width - categorySpace, //fullsize
-                                                      child: ListView.builder(
-                                                          shrinkWrap: true,
-                                                          physics:
-                                                              const NeverScrollableScrollPhysics(),
-                                                          itemCount: selectedLength,
-                                                          scrollDirection: Axis.vertical,
-                                                          itemBuilder: (context, i) {
-                                                            
-                                                            int countColor;
-                                                            int countText;
-                                                            int iconColor;
-                                                            int iconBack;
-                                                                                                    
-                                                            int locateColor =
-                                                                0xFFCFDFFF;
-                                                            int locateText =
-                                                                0xFF6A9DFF;
-                                                                                                    
-                                                            int expColor =
-                                                                0xFFB6F4CB;
-                                                            int expText =
-                                                                0xFF38AE5D;
-                                                                                                    
-                                                            double locateWidth =
-                                                                80;
-                                                            double locatePadding =
-                                                                10;
-                                                            double expWidth = 80;
-                                                            double expPadding =
-                                                                10;
-                                                                                                    
-                                                            double makerWidth =
-                                                                80;
-                                                            double makerPadding =
-                                                                10;
-                                                                                                    
-                                                            if (defaultView?[i].count == 0) {
-                                                              countColor =
-                                                                  0xFFFFC5C5; //pink background
-                                                              countText =
-                                                                  0xFFF16969; //pink text
-                                                                                                    
-                                                              iconBack =
-                                                                  0xFFFFC5C5; //pink background
-                                                              iconColor =
-                                                                  0xFFF16969; //pink text
-                                                            } else {
-                                                              countColor =
-                                                                  0xFFFFF3B2; //yellow background
-                                                              countText =
-                                                                  0xFFE4C93D; //yellow text
-                                                                                                    
-                                                              iconBack =
-                                                                  0xFFFFF3B2; //yellow background
-                                                              iconColor =
-                                                                  0xFFE4C93D; //yellow text
-                                                            }
-                                                                                                    
-                                                            String? name;
-                                                            if (defaultView?[i].name == null || defaultView?[i].name == "") {
-                                                              name = "";
-                                                            } else {
-                                                              name = defaultView?[i].name;
-              
-                                                              if (name!.length > 10) {
-                                                                name = name?.substring(0, 10);
-                                                                name ="$name...";
-                                                              }
-                                                            }
-                                                                                                    
-                                                            String? toolExplain;
-                                                            if (defaultView?[i].toolExplain == null || defaultView?[i].toolExplain == "") {
-                                                              toolExplain = "상세정보를 입력하세요.";
-                                                            } else {
-                                                              toolExplain = defaultView?[i].toolExplain;
-                                                              if (toolExplain!.length > 20) {
-                                                                toolExplain = toolExplain?.substring(0, 20);
-                                                                toolExplain ="$toolExplain...";
-                                                              }
-                                                            }
-              
-                                                            bool expireVisibility = false;
-                                                            int expCheck = 0;
-                                                            int todayCheck = 0;
-                                                                                                    
-                                                            String? exp;
-                                                            if (defaultView?[i].exp == null || defaultView?[i].exp == "") {
-                                                              exp = "";
-                                                              expWidth = 0;
-                                                              expPadding = 0;
-                                                            } else {
-                                                              exp = defaultView?[i].exp;
-              
-                                                              todayCheck = int.parse(today);
-                                                              String tempExp = exp!.substring(0,4) + exp!.substring(5,7) + exp!.substring(8,10);
-                                                              expCheck = int.parse(tempExp);
-              
-                                                              if(expCheck < todayCheck) {
-                                                                expireVisibility = true;
-                                                                expColor = 0xFFFFC5C5;
-                                                                expText = 0xFFF16969;
-                                                              } else {
-                                                                expColor = 0xFFB6F4CB;
-                                                                expText = 0xFF38AE5D;
-                                                              }
-                                                            }
-                                                                                                    
-                                                            String? maker;
-                                                            if (defaultView?[i]
-                                                                        .maker ==
-                                                                    null ||
-                                                                defaultView?[i]
-                                                                        .maker ==
-                                                                    "") {
-                                                              maker = "Ad.";
-                                                              makerWidth = 40;
-                                                              //makerPadding = 0;
-                                                            } else {
-                                                              maker = defaultView?[i].maker;
-                                                                                                    
-                                                              if (maker!.length < 3) {
-                                                                makerWidth = 40;
-                                                              } else if (maker!.length < 4) {
-                                                                maker = maker?.substring(0, 3);
-                                                                maker ="$maker..";
-                                                              } else if (maker!.length < 5) {
-                                                                makerWidth = 60;
-                                                              } else if (maker!.length > 5) {
-                                                                maker = maker?.substring(0, 5);
-                                                                maker ="$maker...";
-                                                              }
-                                                            }
-                                                                                                    
-                                                            String? locate;
-                                                            if (defaultView?[i]
-                                                                        .locate ==
-                                                                    null ||
-                                                                defaultView?[i]
-                                                                        .locate ==
-                                                                    "") {
-                                                              locate = "";
-                                                              locateWidth = 0;
-                                                              locatePadding = 0;
-                                                            } else {
-                                                              locate = defaultView?[i]
-                                                                  .locate;
-                                                                                                    
-                                                              if (locate!.length <
-                                                                  3) {
-                                                                locateWidth = 40;
-                                                              } else if (locate!
-                                                                      .length <
-                                                                  4) {
-                                                                locateWidth = 50;
-                                                              } else if (locate!
-                                                                      .length <
-                                                                  5) {
-                                                                locateWidth = 60;
-                                                              } else if (locate!
-                                                                      .length >
-                                                                  5) {
-                                                                locate = locate
-                                                                    ?.substring(
-                                                                        0, 5);
-                                                                locate =
-                                                                    "$locate...";
-                                                              }
-                                                            }
-              
-                                                            if(expWidth != 0) {
-                                                              makerWidth = 0;
-                                                            }
-                                                                                                    
-                                                            if (searchText!
-                                                                    .isNotEmpty &&
-                                                                !defaultView![i]
-                                                                    .name!
-                                                                    .toLowerCase()
-                                                                    .contains(
-                                                                        searchText
-                                                                            .toLowerCase())) {
-                                                              return SizedBox
-                                                                  .shrink();
-                                                            } else
-                                                              return InkWell(
-                                                                onTap: () {
-                                                                  showDefault(
-                                                                      context,
-                                                                      defaultView?[i]);
-                                                                },
-                                                                child: Column(
+                            child: Column(
+                              children: [
+                                //정렬용
+                                  Container(
+                                      height: mediaHeight(context, 0.05),
+                                      width: mediaWidth(context, 1),
+                                      child: Row(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.center,
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  left: 15),
+                                              child: Text(
+                                                '물품 ${selectedLength! + selectedCustomLength!}종류',
+                                                style: TextStyle(
+                                                    color: Colors.grey.shade800,
+                                                    fontSize: 18,
+                                                    fontWeight:
+                                                        FontWeight.w500),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.only(
+                                                  right: 10),
+                                              child: IconButton(
+                                                icon: Icon(
+                                                  listIcon,
+                                                  color: Colors.grey.shade600,
+                                                  size: 25,
+                                                ),
+                                                onPressed: () async{
+                                                  showModalBottomSheet (
+                                                    barrierColor: Colors.black.withOpacity(0.3),
+                                                    backgroundColor: Colors.transparent,
+                                                    context: context,
+                                                    builder: (BuildContext context) {
+                                                      return StatefulBuilder(builder: (BuildContext context, StateSetter bottomState) {
+                                                      return Container(
+                                                        color: Color.fromARGB(255, 255, 255, 255).withOpacity(1),
+                                                        height: 200,
+                                                        child: Column(
+                                                          children: [
+                                                            Container(
+                                                              width: mediaWidth(context, 1),
+                                                              height: 70,
+                                                              child: Row(
+                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                children: [Text(
+                                                                   '조회',
+                                                                    style: TextStyle(
+                                                                      color: Colors.grey.shade800,
+                                                                       fontSize: 20,
+                                                                       fontWeight: FontWeight.w500),
+                                                                  ),
+                                                                ]
+                                                              )
+                                                            ),
+
+                                                            InkWell(
+                                                              onTap: () {
+                                                                print("a");
+                                                                if(detail == Icons.radio_button_checked) {
+                                                                  
+                                                                } else {
+                                                                  detail = Icons.radio_button_checked;
+                                                                  brief = Icons.radio_button_unchecked;
+                                                                }
+                                                                listIcon = Icons.format_list_bulleted;
+                                                                bottomState(() {
+                                                                  setState(() {
+                                                                    brief = brief;
+                                                                    detail = detail;
+                                                                    listIcon = Icons.format_list_bulleted;
+                                                                    explainSize = 16;
+                                                                    detailColor = Colors.green;
+                                                                    briefColor = Colors.grey;
+                                                                  });
+                                                                });
+                                                              },
+                                                              child: Container(
+                                                                width: mediaWidth(context, 1),
+                                                                height: 60,
+                                                                child: Padding(
+                                                                  padding: const EdgeInsets.only(left: 10, right: 10,),
+                                                                  child: Row(
                                                                     children: [
-                                                                      Padding(
-                                                                        padding: const EdgeInsets
-                                                                            .only(
-                                                                            top:
-                                                                                10,
-                                                                            bottom:
-                                                                                10),
-                                                                        child:
-                                                                            Container(
-                                                                          child:
-                                                                              Row(
-                                                                            crossAxisAlignment:
-                                                                                CrossAxisAlignment.start,
-                                                                            children: [
-                                                                              Padding(
-                                                                                padding: const EdgeInsets.only(right: 20, left: 10, top: 5, bottom: 5),
-                                                                                child: Container(
-                                                                                  decoration: BoxDecoration(
-                                                                                    border: Border.all(
-                                                                                      width: 1.8,
-                                                                                      color: Color(iconBack),
-                                                                                    ),
-                                                                                    color: Color(iconBack),
-                                                                                    borderRadius: BorderRadius.circular(10),
-                                                                                  ),
-                                                                                  child: Padding(
-                                                                                    padding: EdgeInsets.all(5.0),
-                                                                                    child: Icon(
-                                                                                      Icons.local_fire_department,
-                                                                                      color: Color(iconColor),
-                                                                                      size: 30,
-                                                                                    ),
-                                                                                  ),
-                                                                                ),
-                                                                              ),
-                                                                              Column(
-                                                                                crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                                                children: [
+                                                                      Icon(
+                                                                        Icons.format_list_bulleted,
+                                                                      ),
+                                                                      Text(
+                                                                       ' 자세히 보기',
+                                                                        style: TextStyle(
+                                                                          color: Colors.grey.shade800,
+                                                                           fontSize: 20,
+                                                                           fontWeight: FontWeight.w500),
+                                                                      ),
+                                                                
+                                                                      Spacer(),
+                                                                      Icon(
+                                                                        detail,
+                                                                        color: detailColor,
+                                                                      ),
+                                                                    ]
+                                                                  ),
+                                                                )
+                                                              ),
+                                                            ),
+
+                                                            InkWell(
+                                                              onTap: () {
+                                                                print("b");
+                                                                if(brief == Icons.radio_button_checked) {
+                                                                } else {
+                                                                  brief = Icons.radio_button_checked;
+                                                                  detail = Icons.radio_button_unchecked;
+                                                                }
+                                                                bottomState(() {
+                                                                  setState(() {
+                                                                    brief = brief;
+                                                                    detail = detail;
+                                                                    listIcon = Icons.view_agenda;
+                                                                    explainSize = 0;
+                                                                    detailColor = Colors.grey;
+                                                                    briefColor = Colors.green;
+                                                                  });
+                                                                });
+                                                              },
+                                                              child: Container(
+                                                                width: mediaWidth(context, 1),
+                                                                height: 60,
+                                                                child: Padding(
+                                                                  padding: const EdgeInsets.only(left: 10, right: 10,),
+                                                                  child: Row(
+                                                                    children: [
+                                                                      Icon(
+                                                                        Icons.view_agenda,
+                                                                      ),
+                                                                      Text(
+                                                                       ' 간략히 보기',
+                                                                        style: TextStyle(
+                                                                          color: Colors.grey.shade800,
+                                                                           fontSize: 20,
+                                                                           fontWeight: FontWeight.w500),
+                                                                      ),
+                                                                
+                                                                      Spacer(),
+                                                                      Icon(
+                                                                        brief,
+                                                                        color: briefColor,
+                                                                      ),
+                                                                    ]
+                                                                  ),
+                                                                )
+                                                              ),
+                                                            )
+                                                          ]
+                                                        )
+                                                      );
+                                                      });
+                                                    }
+                                                  );
+                                                },
+                                              ),
+                                            ),
+                                          ])),
+
+                                Expanded(
+                                  child: SingleChildScrollView(
+                                    // keyboardDismissBehavior:
+                                    //     ScrollViewKeyboardDismissBehavior.onDrag,
+                                    child: Column(
+                                      children: [
+                                        FutureBuilder<List<defaultTool>>(
+                                            future: futureDefaultTool,
+                                            builder: (context, snapshot) {
+                                            
+                                              switch (selectedCategory) {
+                                                case "전체":
+                                                  defaultView = allDefault;
+                                                  customView = allCustom;
+                                                case "화재":
+                                                  defaultView = fire;
+                                                case "응급":
+                                                  defaultView = emergent;
+                                                case "지진":
+                                                  defaultView = quake;
+                                                case "생존":
+                                                  defaultView = survive;
+                                                case "전쟁":
+                                                  defaultView = war;
+                                                case "수해":
+                                                  defaultView = flood;
+                                                case "기타":
+                                                  defaultView = allDefault;
+                                                  customView = allCustom;
+                                              }
+                                              
+                                              if (snapshot.hasError)
+                                                return Text('${snapshot.error}');
+                                              
+                                              if(defaultView?.isEmpty == true && selectedLength == 0) {
+                                                print("defaultView is empty");
+                                                return Container(
+                                                  height: mediaHeight(context, 0.7),
+                                                  child: Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      Text("empty")
+                                                    ]
+                                                  ),
+                                                );
+                                              }
+                                              
+                                              if (defaultView != null) {
+                                                return Column(
+                                                  children: [
+                                                    Column(
+                                                      mainAxisSize: MainAxisSize.min,
+                                                      mainAxisAlignment:
+                                                          MainAxisAlignment.start,
+                                                      crossAxisAlignment:
+                                                          CrossAxisAlignment.start,
+                                                      children: [
+                                                        SizedBox(
+                                                            width: MediaQuery.of(context).size.width - categorySpace, //fullsize
+                                                            child: ListView.builder(
+                                                                shrinkWrap: true,
+                                                                physics:
+                                                                    const NeverScrollableScrollPhysics(),
+                                                                itemCount: selectedLength,
+                                                                scrollDirection: Axis.vertical,
+                                                                itemBuilder: (context, i) {
+                                                                  
+                                                                  int countColor;
+                                                                  int countText;
+                                                                  int iconColor;
+                                                                  int iconBack;
+                                                                                                          
+                                                                  int locateColor =
+                                                                      0xFFCFDFFF;
+                                                                  int locateText =
+                                                                      0xFF6A9DFF;
+                                                                                                          
+                                                                  int expColor =
+                                                                      0xFFB6F4CB;
+                                                                  int expText =
+                                                                      0xFF38AE5D;
+                                                                                                          
+                                                                  double locateWidth =
+                                                                      80;
+                                                                  double locatePadding =
+                                                                      10;
+                                                                  double expWidth = 80;
+                                                                  double expPadding =
+                                                                      10;
+                                                                                                          
+                                                                  double makerWidth =
+                                                                      80;
+                                                                  double makerPadding =
+                                                                      10;
+                                                                                                          
+                                                                  if (defaultView?[i].count == 0) {
+                                                                    countColor =
+                                                                        0xFFFFC5C5; //pink background
+                                                                    countText =
+                                                                        0xFFF16969; //pink text
+                                                                                                          
+                                                                    iconBack =
+                                                                        0xFFFFC5C5; //pink background
+                                                                    iconColor =
+                                                                        0xFFF16969; //pink text
+                                                                  } else {
+                                                                    countColor =
+                                                                        0xFFFFF3B2; //yellow background
+                                                                    countText =
+                                                                        0xFFE4C93D; //yellow text
+                                                                                                          
+                                                                    iconBack =
+                                                                        0xFFFFF3B2; //yellow background
+                                                                    iconColor =
+                                                                        0xFFE4C93D; //yellow text
+                                                                  }
+                                                                                                          
+                                                                  String? name;
+                                                                  if (defaultView?[i].name == null || defaultView?[i].name == "") {
+                                                                    name = "";
+                                                                  } else {
+                                                                    name = defaultView?[i].name;
+                                              
+                                                                    if (name!.length > 10) {
+                                                                      name = name?.substring(0, 10);
+                                                                      name ="$name...";
+                                                                    }
+                                                                  }
+                                                                                                          
+                                                                  String? toolExplain;
+                                                                  if (defaultView?[i].toolExplain == null || defaultView?[i].toolExplain == "") {
+                                                                    toolExplain = "상세정보를 입력하세요.";
+                                                                  } else {
+                                                                    toolExplain = defaultView?[i].toolExplain;
+                                                                    if (toolExplain!.length > 20) {
+                                                                      toolExplain = toolExplain?.substring(0, 20);
+                                                                      toolExplain ="$toolExplain...";
+                                                                    }
+                                                                  }
+                                              
+                                                                  bool expireVisibility = false;
+                                                                  int expCheck = 0;
+                                                                  int todayCheck = 0;
+                                                                                                          
+                                                                  String? exp;
+                                                                  if (defaultView?[i].exp == null || defaultView?[i].exp == "") {
+                                                                    exp = "";
+                                                                    expWidth = 0;
+                                                                    expPadding = 0;
+                                                                  } else {
+                                                                    exp = defaultView?[i].exp;
+                                              
+                                                                    todayCheck = int.parse(today);
+                                                                    String tempExp = exp!.substring(0,4) + exp!.substring(5,7) + exp!.substring(8,10);
+                                                                    expCheck = int.parse(tempExp);
+                                              
+                                                                    if(expCheck < todayCheck) {
+                                                                      expireVisibility = true;
+                                                                      expColor = 0xFFFFC5C5;
+                                                                      expText = 0xFFF16969;
+                                                                    } else {
+                                                                      expColor = 0xFFB6F4CB;
+                                                                      expText = 0xFF38AE5D;
+                                                                    }
+                                                                  }
+                                                                                                          
+                                                                  String? maker;
+                                                                  if (defaultView?[i]
+                                                                              .maker ==
+                                                                          null ||
+                                                                      defaultView?[i]
+                                                                              .maker ==
+                                                                          "") {
+                                                                    maker = "Ad.";
+                                                                    makerWidth = 40;
+                                                                    //makerPadding = 0;
+                                                                  } else {
+                                                                    maker = defaultView?[i].maker;
+                                                                                                          
+                                                                    if (maker!.length < 3) {
+                                                                      makerWidth = 40;
+                                                                    } else if (maker!.length < 4) {
+                                                                      maker = maker?.substring(0, 3);
+                                                                      maker ="$maker..";
+                                                                    } else if (maker!.length < 5) {
+                                                                      makerWidth = 60;
+                                                                    } else if (maker!.length > 5) {
+                                                                      maker = maker?.substring(0, 5);
+                                                                      maker ="$maker...";
+                                                                    }
+                                                                  }
+                                                                                                          
+                                                                  String? locate;
+                                                                  if (defaultView?[i]
+                                                                              .locate ==
+                                                                          null ||
+                                                                      defaultView?[i]
+                                                                              .locate ==
+                                                                          "") {
+                                                                    locate = "";
+                                                                    locateWidth = 0;
+                                                                    locatePadding = 0;
+                                                                  } else {
+                                                                    locate = defaultView?[i]
+                                                                        .locate;
+                                                                                                          
+                                                                    if (locate!.length <
+                                                                        3) {
+                                                                      locateWidth = 40;
+                                                                    } else if (locate!
+                                                                            .length <
+                                                                        4) {
+                                                                      locateWidth = 50;
+                                                                    } else if (locate!
+                                                                            .length <
+                                                                        5) {
+                                                                      locateWidth = 60;
+                                                                    } else if (locate!
+                                                                            .length >
+                                                                        5) {
+                                                                      locate = locate
+                                                                          ?.substring(
+                                                                              0, 5);
+                                                                      locate =
+                                                                          "$locate...";
+                                                                    }
+                                                                  }
+                                              
+                                                                  if(expWidth != 0) {
+                                                                    makerWidth = 0;
+                                                                  }
+                                                                                                          
+                                                                  if (searchText!
+                                                                          .isNotEmpty &&
+                                                                      !defaultView![i]
+                                                                          .name!
+                                                                          .toLowerCase()
+                                                                          .contains(
+                                                                              searchText
+                                                                                  .toLowerCase())) {
+                                                                    return SizedBox
+                                                                        .shrink();
+                                                                  } else
+                                                                    return InkWell(
+                                                                      onTap: () {
+                                                                        showDefault(
+                                                                            context,
+                                                                            defaultView?[i]);
+                                                                      },
+                                                                      child: Column(
+                                                                          children: [
+                                                                            Padding(
+                                                                              padding: const EdgeInsets
+                                                                                  .only(
+                                                                                  top:
+                                                                                      10,
+                                                                                  bottom:
+                                                                                      10),
+                                                                              child:
                                                                                   Container(
-                                                                                    width: mediaWidth(context, 1) - (categorySpace + 100),
-                                                                                    child: Padding(
-                                                                                      padding: const EdgeInsets.only(top: 1),
-                                                                                      child: Row(
-                                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                                                        children: [
-                                                                                          Row(
-                                                                                            children: [
-                                                                                              Text.rich(TextSpan(children: [
-                                                                                                TextSpan(
-                                                                                                    text: '$name ',
-                                                                                                    style: TextStyle(
-                                                                                                      color: Colors.grey.shade700,
-                                                                                                      fontSize: 18,
-                                                                                                      fontWeight: FontWeight.bold,
-                                                                                                    )),
-                                                                                              ])),
-                                                                                            ],
+                                                                                child:
+                                                                                    Row(
+                                                                                  crossAxisAlignment:
+                                                                                      CrossAxisAlignment.start,
+                                                                                  children: [
+                                                                                    Padding(
+                                                                                      padding: const EdgeInsets.only(right: 20, left: 10, top: 5, bottom: 5),
+                                                                                      child: Container(
+                                                                                        decoration: BoxDecoration(
+                                                                                          border: Border.all(
+                                                                                            width: 1.8,
+                                                                                            color: Color(iconBack),
                                                                                           ),
-              
-                                                                                          
-                                                                                      
-                                                                                          Visibility(
-                                                                                            visible: expireVisibility,
-                                                                                            child: Row(
-                                                                                              children: [
-                                                                                                Icon(
-                                                                                                  Icons.report_outlined,
-                                                                                                  color: Colors.red,
-                                                                                                  size: 15,
-                                                                                                ),
-                                                                                                Text(
-                                                                                                '유통기한 만료',
-                                                                                                  style: TextStyle(
-                                                                                                    fontSize: 12,
-                                                                                                    color: Colors.red,
-                                                                                                  ),
-                                                                                                ),
-                                                                                              ],
-                                                                                            ),
+                                                                                          color: Color(iconBack),
+                                                                                          borderRadius: BorderRadius.circular(10),
+                                                                                        ),
+                                                                                        child: Padding(
+                                                                                          padding: EdgeInsets.all(5.0),
+                                                                                          child: Icon(
+                                                                                            Icons.local_fire_department,
+                                                                                            color: Color(iconColor),
+                                                                                            size: 30,
                                                                                           ),
-                                                                                      
-                                                                                        ],
+                                                                                        ),
                                                                                       ),
                                                                                     ),
-                                                                                  ),
-                                                                              
-              
-                                                                                  Padding(
-                                                                                    padding: const EdgeInsets.only(top: 2),
-                                                                                    child: Text.rich(TextSpan(children: [
-                                                                                      TextSpan(
-                                                                                          text: '$toolExplain',
-                                                                                          style: TextStyle(
-                                                                                            color: Colors.grey.shade500,
-                                                                                            fontSize: 16,
-                                                                                            fontWeight: FontWeight.bold,
-                                                                                          )),
-                                                                                    ])),
-                                                                                  ),
-              
-                                                                                  //  Padding(
-                                                                                  //   padding: const EdgeInsets.only(top: 2),
-                                                                                  //   child: Text.rich(TextSpan(children: [
-                                                                                  //     TextSpan(
-                                                                                  //         text: '$maker',
-                                                                                  //         style: TextStyle(
-                                                                                  //           color: Colors.grey.shade500,
-                                                                                  //           fontSize: 15,
-                                                                                  //         )),
-                                                                                  //   ])),
-                                                                                  // ),
-                                                                                  
-                                                                                  Padding(
-                                                                                    padding: const EdgeInsets.only(top: 5),
-                                                                                    child: Row(
-                                                                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                                                                    Column(
+                                                                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                      mainAxisAlignment: MainAxisAlignment.center,
                                                                                       children: [
-                                                                                        Padding(
-                                                                                          padding: const EdgeInsets.only(right: 10),
-                                                                                          child: Container(
-                                                                                            height: 20,
-                                                                                            width: 35,
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width: 1,
-                                                                                                color: Color(countColor),
-                                                                                              ),
-                                                                                              borderRadius: BorderRadius.circular(5),
-                                                                                              color: Color(countColor),
-                                                                                            ),
-                                                                                            child: Padding(
-                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                              child: Text(
-                                                                                                '${defaultView?[i].count}개',
-                                                                                                style: TextStyle(
-                                                                                                  color: Color(countText),
-                                                                                                  fontSize: 12,
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                ),
-                                                                                                textAlign: TextAlign.center,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        Padding(
-                                                                                          padding: EdgeInsets.only(right: locatePadding),
-                                                                                          child: Container(
-                                                                                            height: 20,
-                                                                                            width: locateWidth,
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width: 1,
-                                                                                                color: Color(locateColor),
-                                                                                              ),
-                                                                                              borderRadius: BorderRadius.circular(5),
-                                                                                              color: Color(locateColor),
-                                                                                            ),
-                                                                                            child: Padding(
-                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                              child: Text(
-                                                                                                '$locate',
-                                                                                                style: TextStyle(
-                                                                                                  color: Color(locateText),
-                                                                                                  fontSize: 12,
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                ),
-                                                                                                textAlign: TextAlign.center,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        Padding(
-                                                                                          padding: EdgeInsets.only(right: expPadding),
-                                                                                          child: Container(
-                                                                                            height: 20,
-                                                                                            width: expWidth,
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width: 1,
-                                                                                                color: Color(expColor),
-                                                                                              ),
-                                                                                              borderRadius: BorderRadius.circular(5),
-                                                                                              color: Color(expColor),
-                                                                                            ),
-                                                                                            child: Padding(
-                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                              child: Text(
-                                                                                                '$exp',
-                                                                                                style: TextStyle(
-                                                                                                  color: Color(expText),
-                                                                                                  fontSize: 12,
-                                                                                                  fontWeight: FontWeight.bold,
-                                                                                                ),
-                                                                                                textAlign: TextAlign.center,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
                                                                                         Container(
-                                                                                          height: 20,
-                                                                                          width: makerWidth,
-                                                                                          decoration: BoxDecoration(
-                                                                                            border: Border.all(
-                                                                                              width: 1,
-                                                                                              color: Colors.grey.shade300,
-                                                                                            ),
-                                                                                            borderRadius: BorderRadius.circular(5),
-                                                                                            color: Colors.grey.shade300,
-                                                                                          ),
+                                                                                          width: mediaWidth(context, 1) - (categorySpace + 100),
                                                                                           child: Padding(
-                                                                                            padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                            child: Text(
-                                                                                              '$maker',
-                                                                                              style: TextStyle(
-                                                                                                color: Colors.grey,
-                                                                                                fontSize: 12,
-                                                                                                fontWeight: FontWeight.bold,
-                                                                                              ),
-                                                                                              textAlign: TextAlign.center,
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                      ],
-                                                                                    ),
-                                                                                  )
-                                                                                ],
-                                                                              ),
-                                                                            ],
-                                                                          ),
-                                                                        ),
-                                                                      ),
-                                                                    ]),
-                                                              );
-                                                          })),
-                                                  FutureBuilder<List<customTool>>(
-                                                      future: futureCustomTool,
-                                                      builder: (context, snapshot) {
-              
-                                                        if (snapshot.hasError)
-                                                          return Text('${snapshot.error}');
-              
-                                                        if (customView?.isEmpty == true && selectedLength == 0) {
-                                                          print("customView is empty");
-                                                          return Column(
-                                                              children: [
-                                                                Container(
-                                                                  child: Text("empty"),
-                                                                )
-                                                            ]);
-                                                        }
-              
-                                                       if (customView != null) {
-                                                          return Column(
-                                                            children: [
-                                                              Column(
-                                                                mainAxisSize:
-                                                                    MainAxisSize.min,
-                                                                mainAxisAlignment:
-                                                                    MainAxisAlignment
-                                                                        .start,
-                                                                crossAxisAlignment:
-                                                                    CrossAxisAlignment
-                                                                        .start,
-                                                                children: [
-                                                                  SizedBox(
-                                                                    width: MediaQuery.of(
-                                                                            context)
-                                                                        .size
-                                                                        .width - categorySpace,
-                                                                    child: ListView.builder(
-                                                                      shrinkWrap: true,
-                                                                      physics:
-                                                                          const NeverScrollableScrollPhysics(),
-                                                                      itemCount: selectedCustomLength,
-                                                                      scrollDirection:
-                                                                          Axis.vertical,
-                                                                      itemBuilder:
-                                                                          (context, i) {
-                                                                        int countColor;
-                                                                        int countText;
-                                                                        int iconColor;
-                                                                        int iconBack;
-              
-                                                                        int locateColor =
-                                                                            0xFFCFDFFF;
-                                                                        int locateText =
-                                                                            0xFF6A9DFF;
-              
-                                                                        int expColor =
-                                                                            0xFFB6F4CB;
-                                                                        int expText =
-                                                                            0xFF38AE5D;
-              
-                                                                        double
-                                                                            locateWidth =
-                                                                            80;
-                                                                        double
-                                                                            locatePadding =
-                                                                            10;
-                                                                        double expWidth =
-                                                                            80;
-                                                                        double
-                                                                            expPadding =
-                                                                            10;
-              
-                                                                        if (customView?[i]
-                                                                                .count ==
-                                                                            0) {
-                                                                          countColor =
-                                                                              0xFFFFC5C5; //pink background
-                                                                          countText =
-                                                                              0xFFF16969; //pink text
-              
-                                                                          iconBack =
-                                                                              0xFFFFC5C5; //pink background
-                                                                          iconColor =
-                                                                              0xFFF16969; //pink text
-                                                                        } else {
-                                                                          countColor =
-                                                                              0xFFFFF3B2; //yellow background
-                                                                          countText =
-                                                                              0xFFE4C93D; //yellow text
-              
-                                                                          iconBack =
-                                                                              0xFFFFF3B2; //yellow background
-                                                                          iconColor =
-                                                                              0xFFE4C93D; //yellow text
-                                                                        }
-              
-                                                                        String? name;
-                                                                        if (customView?[i].name == null || customView?[i].name == "") {
-                                                                          name = "";
-                                                                        } else {
-                                                                          name = customView?[i].name;
-              
-                                                                          if (name!.length > 10) {
-                                                                            name = name?.substring(0, 10);
-                                                                            name ="$name...";
-                                                                          }
-                                                                        }
-              
-                                                                        String? toolExplain;
-                                                                        if (customView?[i].toolExplain == null || customView?[i].toolExplain == "") {
-                                                                          toolExplain = "상세정보를 입력하세요.";
-                                                                        } else {
-                                                                          toolExplain = customView?[i].toolExplain;
-                                                                          if (toolExplain!.length > 20) {
-                                                                            toolExplain = toolExplain?.substring(0, 20);
-                                                                            toolExplain ="$toolExplain...";
-                                                                          }
-                                                                        }
-              
-                                                                        bool expireVisibility = false;
-                                                                        int expCheck = 0;
-                                                                        int todayCheck = 0;
-              
-                                                                        String? exp;
-                                                                        if (customView?[i].exp == null || customView?[i].exp == "") {
-                                                                          exp = "";
-                                                                          expWidth = 0;
-                                                                          expPadding = 0;
-                                                                        } else {
-                                                                          exp = customView?[i].exp;
-              
-                                                                          todayCheck = int.parse(today);
-                                                                          String tempExp = exp!.substring(0,4) + exp!.substring(5,7) + exp!.substring(8,10);
-                                                                          expCheck = int.parse(tempExp);
-              
-                                                                          if (expCheck <
-                                                                              todayCheck) {
-                                                                            expireVisibility =
-                                                                                true;
-                                                                            expColor =
-                                                                                0xFFFFC5C5;
-                                                                            expText =
-                                                                                0xFFF16969;
-                                                                          } else {
-                                                                            expColor =
-                                                                                0xFFB6F4CB;
-                                                                            expText =
-                                                                                0xFF38AE5D;
-                                                                          }
-                                                                        }
-              
-                                                                        String? locate;
-                                                                        if (customView?[
-                                                                                        i]
-                                                                                    .locate ==
-                                                                                null ||
-                                                                            customView?[
-                                                                                        i]
-                                                                                    .locate ==
-                                                                                "") {
-                                                                          locate = "";
-                                                                          locateWidth = 0;
-                                                                          locatePadding =
-                                                                              0;
-                                                                        } else {
-                                                                          locate =
-                                                                              customView?[
-                                                                                      i]
-                                                                                  .locate;
-              
-                                                                          if (locate!
-                                                                                  .length <
-                                                                              3) {
-                                                                            locateWidth =
-                                                                                40;
-                                                                          } else if (locate!
-                                                                                  .length <
-                                                                              4) {
-                                                                            locateWidth =
-                                                                                50;
-                                                                          } else if (locate!
-                                                                                  .length <
-                                                                              5) {
-                                                                            locateWidth =
-                                                                                60;
-                                                                          } else if (locate!
-                                                                                  .length >
-                                                                              5) {
-                                                                            locate = locate
-                                                                                ?.substring(
-                                                                                    0, 5);
-                                                                            locate =
-                                                                                "$locate...";
-                                                                          }
-                                                                        }
-              
-                                                                        if (searchText!
-                                                                                .isNotEmpty &&
-                                                                            !customView![i]
-                                                                                .name!
-                                                                                .toLowerCase()
-                                                                                .contains(
-                                                                                    searchText
-                                                                                        .toLowerCase())) {
-                                                                          return SizedBox
-                                                                              .shrink();
-                                                                        } else
-                                                                          return InkWell(
-                                                                            onTap: () {
-                                                                              showCustom(
-                                                                                  context,
-                                                                                  customView?[i]);
-                                                                            },
-                                                                            child: Column(
-                                                                              children: [
-                                                                                Padding(
-                                                                                  padding: const EdgeInsets
-                                                                                      .only(
-                                                                                      top:
-                                                                                          10,
-                                                                                      bottom:
-                                                                                          10),
-                                                                                  child:
-                                                                                      Container(
-                                                                                    child:
-                                                                                        Row(
-                                                                                      crossAxisAlignment:
-                                                                                          CrossAxisAlignment.start,
-                                                                                      children: [
-                                                                                        Padding(
-                                                                                          padding: const EdgeInsets.only(right: 20, left: 10, top: 5, bottom: 5),
-                                                                                          child: Container(
-                                                                                            decoration: BoxDecoration(
-                                                                                              border: Border.all(
-                                                                                                width: 1.7,
-                                                                                                color: Color(iconBack),
-                                                                                              ),
-                                                                                              color: Color(iconBack),
-                                                                                              borderRadius: BorderRadius.circular(10),
-                                                                                            ),
-                                                                                            child: Padding(
-                                                                                              padding: EdgeInsets.all(10.0),
-                                                                                              child: Icon(
-                                                                                                Icons.medical_services,
-                                                                                                color: Color(iconColor),
-                                                                                                size: 20,
-                                                                                              ),
-                                                                                            ),
-                                                                                          ),
-                                                                                        ),
-                                                                                        Column(
-                                                                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                                                                          mainAxisAlignment: MainAxisAlignment.center,
-                                                                                          children: [
-                                                                                            Container(
-                                                                                              width: mediaWidth(context, 1) - (categorySpace + 100),
-                                                                                              child: Padding(
-                                                                                                padding: const EdgeInsets.only(top: 1),
-                                                                                                child: Row(
-                                                                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                            padding: const EdgeInsets.only(top: 1),
+                                                                                            child: Row(
+                                                                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                                                              children: [
+                                                                                                Row(
                                                                                                   children: [
                                                                                                     Text.rich(TextSpan(children: [
                                                                                                       TextSpan(
-                                                                                                          text: '$name',
+                                                                                                          text: '$name ',
                                                                                                           style: TextStyle(
                                                                                                             color: Colors.grey.shade700,
                                                                                                             fontSize: 18,
                                                                                                             fontWeight: FontWeight.bold,
                                                                                                           )),
                                                                                                     ])),
-              
-                                                                                                    Visibility(
-                                                                                                      visible: expireVisibility,
+                                                                                                  ],
+                                                                                                ),
+                                              
+                                                                                                
+                                                                                            
+                                                                                                Visibility(
+                                                                                                  visible: expireVisibility,
+                                                                                                  child: Row(
+                                                                                                    children: [
+                                                                                                      Icon(
+                                                                                                        Icons.report_outlined,
+                                                                                                        color: Colors.red,
+                                                                                                        size: 15,
+                                                                                                      ),
+                                                                                                      Text(
+                                                                                                      '유통기한 만료',
+                                                                                                        style: TextStyle(
+                                                                                                          fontSize: 12,
+                                                                                                          color: Colors.red,
+                                                                                                        ),
+                                                                                                      ),
+                                                                                                    ],
+                                                                                                  ),
+                                                                                                ),
+                                                                                            
+                                                                                              ],
+                                                                                            ),
+                                                                                          ),
+                                                                                        ),
+                                                                                    
+                                              
+                                                                                        Padding(
+                                                                                          padding: const EdgeInsets.only(top: 2),
+                                                                                          child: Text.rich(TextSpan(children: [
+                                                                                            TextSpan(
+                                                                                                text: '$toolExplain',
+                                                                                                style: TextStyle(
+                                                                                                  color: Colors.grey.shade500,
+                                                                                                  fontSize: explainSize,
+                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                )),
+                                                                                          ])),
+                                                                                        ),
+                                              
+                                                                                        //  Padding(
+                                                                                        //   padding: const EdgeInsets.only(top: 2),
+                                                                                        //   child: Text.rich(TextSpan(children: [
+                                                                                        //     TextSpan(
+                                                                                        //         text: '$maker',
+                                                                                        //         style: TextStyle(
+                                                                                        //           color: Colors.grey.shade500,
+                                                                                        //           fontSize: 15,
+                                                                                        //         )),
+                                                                                        //   ])),
+                                                                                        // ),
+                                                                                        
+                                                                                        Padding(
+                                                                                          padding: const EdgeInsets.only(top: 5),
+                                                                                          child: Row(
+                                                                                            crossAxisAlignment: CrossAxisAlignment.end,
+                                                                                            children: [
+                                                                                              Padding(
+                                                                                                padding: const EdgeInsets.only(right: 10),
+                                                                                                child: Container(
+                                                                                                  height: 20,
+                                                                                                  width: 35,
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    border: Border.all(
+                                                                                                      width: 1,
+                                                                                                      color: Color(countColor),
+                                                                                                    ),
+                                                                                                    borderRadius: BorderRadius.circular(5),
+                                                                                                    color: Color(countColor),
+                                                                                                  ),
+                                                                                                  child: Padding(
+                                                                                                    padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                    child: Text(
+                                                                                                      '${defaultView?[i].count}개',
+                                                                                                      style: TextStyle(
+                                                                                                        color: Color(countText),
+                                                                                                        fontSize: 12,
+                                                                                                        fontWeight: FontWeight.bold,
+                                                                                                      ),
+                                                                                                      textAlign: TextAlign.center,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Padding(
+                                                                                                padding: EdgeInsets.only(right: locatePadding),
+                                                                                                child: Container(
+                                                                                                  height: 20,
+                                                                                                  width: locateWidth,
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    border: Border.all(
+                                                                                                      width: 1,
+                                                                                                      color: Color(locateColor),
+                                                                                                    ),
+                                                                                                    borderRadius: BorderRadius.circular(5),
+                                                                                                    color: Color(locateColor),
+                                                                                                  ),
+                                                                                                  child: Padding(
+                                                                                                    padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                    child: Text(
+                                                                                                      '$locate',
+                                                                                                      style: TextStyle(
+                                                                                                        color: Color(locateText),
+                                                                                                        fontSize: 12,
+                                                                                                        fontWeight: FontWeight.bold,
+                                                                                                      ),
+                                                                                                      textAlign: TextAlign.center,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Padding(
+                                                                                                padding: EdgeInsets.only(right: expPadding),
+                                                                                                child: Container(
+                                                                                                  height: 20,
+                                                                                                  width: expWidth,
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    border: Border.all(
+                                                                                                      width: 1,
+                                                                                                      color: Color(expColor),
+                                                                                                    ),
+                                                                                                    borderRadius: BorderRadius.circular(5),
+                                                                                                    color: Color(expColor),
+                                                                                                  ),
+                                                                                                  child: Padding(
+                                                                                                    padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                    child: Text(
+                                                                                                      '$exp',
+                                                                                                      style: TextStyle(
+                                                                                                        color: Color(expText),
+                                                                                                        fontSize: 12,
+                                                                                                        fontWeight: FontWeight.bold,
+                                                                                                      ),
+                                                                                                      textAlign: TextAlign.center,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Container(
+                                                                                                height: 20,
+                                                                                                width: makerWidth,
+                                                                                                decoration: BoxDecoration(
+                                                                                                  border: Border.all(
+                                                                                                    width: 1,
+                                                                                                    color: Colors.grey.shade300,
+                                                                                                  ),
+                                                                                                  borderRadius: BorderRadius.circular(5),
+                                                                                                  color: Colors.grey.shade300,
+                                                                                                ),
+                                                                                                child: Padding(
+                                                                                                  padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                  child: Text(
+                                                                                                    '$maker',
+                                                                                                    style: TextStyle(
+                                                                                                      color: Colors.grey,
+                                                                                                      fontSize: 12,
+                                                                                                      fontWeight: FontWeight.bold,
+                                                                                                    ),
+                                                                                                    textAlign: TextAlign.center,
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                            ],
+                                                                                          ),
+                                                                                        )
+                                                                                      ],
+                                                                                    ),
+                                                                                  ],
+                                                                                ),
+                                                                              ),
+                                                                            ),
+                                                                          ]),
+                                                                    );
+                                                                })),
+                                                        FutureBuilder<List<customTool>>(
+                                                            future: futureCustomTool,
+                                                            builder: (context, snapshot) {
+                                              
+                                                              if (snapshot.hasError)
+                                                                return Text('${snapshot.error}');
+                                              
+                                                              if (customView?.isEmpty == true && selectedLength == 0) {
+                                                                print("customView is empty");
+                                                                return Column(
+                                                                    children: [
+                                                                      Container(
+                                                                        child: Text("empty"),
+                                                                      )
+                                                                  ]);
+                                                              }
+                                              
+                                                             if (customView != null) {
+                                                                return Column(
+                                                                  children: [
+                                                                    Column(
+                                                                      mainAxisSize:
+                                                                          MainAxisSize.min,
+                                                                      mainAxisAlignment:
+                                                                          MainAxisAlignment
+                                                                              .start,
+                                                                      crossAxisAlignment:
+                                                                          CrossAxisAlignment
+                                                                              .start,
+                                                                      children: [
+                                                                        SizedBox(
+                                                                          width: MediaQuery.of(
+                                                                                  context)
+                                                                              .size
+                                                                              .width - categorySpace,
+                                                                          child: ListView.builder(
+                                                                            shrinkWrap: true,
+                                                                            physics:
+                                                                                const NeverScrollableScrollPhysics(),
+                                                                            itemCount: selectedCustomLength,
+                                                                            scrollDirection:
+                                                                                Axis.vertical,
+                                                                            itemBuilder:
+                                                                                (context, i) {
+                                                                              int countColor;
+                                                                              int countText;
+                                                                              int iconColor;
+                                                                              int iconBack;
+                                              
+                                                                              int locateColor =
+                                                                                  0xFFCFDFFF;
+                                                                              int locateText =
+                                                                                  0xFF6A9DFF;
+                                              
+                                                                              int expColor =
+                                                                                  0xFFB6F4CB;
+                                                                              int expText =
+                                                                                  0xFF38AE5D;
+                                              
+                                                                              double
+                                                                                  locateWidth =
+                                                                                  80;
+                                                                              double
+                                                                                  locatePadding =
+                                                                                  10;
+                                                                              double expWidth =
+                                                                                  80;
+                                                                              double
+                                                                                  expPadding =
+                                                                                  10;
+                                              
+                                                                              if (customView?[i]
+                                                                                      .count ==
+                                                                                  0) {
+                                                                                countColor =
+                                                                                    0xFFFFC5C5; //pink background
+                                                                                countText =
+                                                                                    0xFFF16969; //pink text
+                                              
+                                                                                iconBack =
+                                                                                    0xFFFFC5C5; //pink background
+                                                                                iconColor =
+                                                                                    0xFFF16969; //pink text
+                                                                              } else {
+                                                                                countColor =
+                                                                                    0xFFFFF3B2; //yellow background
+                                                                                countText =
+                                                                                    0xFFE4C93D; //yellow text
+                                              
+                                                                                iconBack =
+                                                                                    0xFFFFF3B2; //yellow background
+                                                                                iconColor =
+                                                                                    0xFFE4C93D; //yellow text
+                                                                              }
+                                              
+                                                                              String? name;
+                                                                              if (customView?[i].name == null || customView?[i].name == "") {
+                                                                                name = "";
+                                                                              } else {
+                                                                                name = customView?[i].name;
+                                              
+                                                                                if (name!.length > 10) {
+                                                                                  name = name?.substring(0, 10);
+                                                                                  name ="$name...";
+                                                                                }
+                                                                              }
+                                              
+                                                                              String? toolExplain;
+                                                                              if (customView?[i].toolExplain == null || customView?[i].toolExplain == "") {
+                                                                                toolExplain = "상세정보를 입력하세요.";
+                                                                              } else {
+                                                                                toolExplain = customView?[i].toolExplain;
+                                                                                if (toolExplain!.length > 20) {
+                                                                                  toolExplain = toolExplain?.substring(0, 20);
+                                                                                  toolExplain ="$toolExplain...";
+                                                                                }
+                                                                              }
+                                              
+                                                                              bool expireVisibility = false;
+                                                                              int expCheck = 0;
+                                                                              int todayCheck = 0;
+                                              
+                                                                              String? exp;
+                                                                              if (customView?[i].exp == null || customView?[i].exp == "") {
+                                                                                exp = "";
+                                                                                expWidth = 0;
+                                                                                expPadding = 0;
+                                                                              } else {
+                                                                                exp = customView?[i].exp;
+                                              
+                                                                                todayCheck = int.parse(today);
+                                                                                String tempExp = exp!.substring(0,4) + exp!.substring(5,7) + exp!.substring(8,10);
+                                                                                expCheck = int.parse(tempExp);
+                                              
+                                                                                if (expCheck <
+                                                                                    todayCheck) {
+                                                                                  expireVisibility =
+                                                                                      true;
+                                                                                  expColor =
+                                                                                      0xFFFFC5C5;
+                                                                                  expText =
+                                                                                      0xFFF16969;
+                                                                                } else {
+                                                                                  expColor =
+                                                                                      0xFFB6F4CB;
+                                                                                  expText =
+                                                                                      0xFF38AE5D;
+                                                                                }
+                                                                              }
+                                              
+                                                                              String? locate;
+                                                                              if (customView?[
+                                                                                              i]
+                                                                                          .locate ==
+                                                                                      null ||
+                                                                                  customView?[
+                                                                                              i]
+                                                                                          .locate ==
+                                                                                      "") {
+                                                                                locate = "";
+                                                                                locateWidth = 0;
+                                                                                locatePadding =
+                                                                                    0;
+                                                                              } else {
+                                                                                locate =
+                                                                                    customView?[
+                                                                                            i]
+                                                                                        .locate;
+                                              
+                                                                                if (locate!
+                                                                                        .length <
+                                                                                    3) {
+                                                                                  locateWidth =
+                                                                                      40;
+                                                                                } else if (locate!
+                                                                                        .length <
+                                                                                    4) {
+                                                                                  locateWidth =
+                                                                                      50;
+                                                                                } else if (locate!
+                                                                                        .length <
+                                                                                    5) {
+                                                                                  locateWidth =
+                                                                                      60;
+                                                                                } else if (locate!
+                                                                                        .length >
+                                                                                    5) {
+                                                                                  locate = locate
+                                                                                      ?.substring(
+                                                                                          0, 5);
+                                                                                  locate =
+                                                                                      "$locate...";
+                                                                                }
+                                                                              }
+                                              
+                                                                              if (searchText!
+                                                                                      .isNotEmpty &&
+                                                                                  !customView![i]
+                                                                                      .name!
+                                                                                      .toLowerCase()
+                                                                                      .contains(
+                                                                                          searchText
+                                                                                              .toLowerCase())) {
+                                                                                return SizedBox
+                                                                                    .shrink();
+                                                                              } else
+                                                                                return InkWell(
+                                                                                  onTap: () {
+                                                                                    showCustom(
+                                                                                        context,
+                                                                                        customView?[i]);
+                                                                                  },
+                                                                                  child: Column(
+                                                                                    children: [
+                                                                                      Padding(
+                                                                                        padding: const EdgeInsets
+                                                                                            .only(
+                                                                                            top:
+                                                                                                10,
+                                                                                            bottom:
+                                                                                                10),
+                                                                                        child:
+                                                                                            Container(
+                                                                                          child:
+                                                                                              Row(
+                                                                                            crossAxisAlignment:
+                                                                                                CrossAxisAlignment.start,
+                                                                                            children: [
+                                                                                              Padding(
+                                                                                                padding: const EdgeInsets.only(right: 20, left: 10, top: 5, bottom: 5),
+                                                                                                child: Container(
+                                                                                                  decoration: BoxDecoration(
+                                                                                                    border: Border.all(
+                                                                                                      width: 1.7,
+                                                                                                      color: Color(iconBack),
+                                                                                                    ),
+                                                                                                    color: Color(iconBack),
+                                                                                                    borderRadius: BorderRadius.circular(10),
+                                                                                                  ),
+                                                                                                  child: Padding(
+                                                                                                    padding: EdgeInsets.all(10.0),
+                                                                                                    child: Icon(
+                                                                                                      Icons.medical_services,
+                                                                                                      color: Color(iconColor),
+                                                                                                      size: 20,
+                                                                                                    ),
+                                                                                                  ),
+                                                                                                ),
+                                                                                              ),
+                                                                                              Column(
+                                                                                                crossAxisAlignment: CrossAxisAlignment.start,
+                                                                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                                                                children: [
+                                                                                                  Container(
+                                                                                                    width: mediaWidth(context, 1) - (categorySpace + 100),
+                                                                                                    child: Padding(
+                                                                                                      padding: const EdgeInsets.only(top: 1),
                                                                                                       child: Row(
+                                                                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                                                                         children: [
-                                                                                                          Icon(
-                                                                                                            Icons.report_outlined,
-                                                                                                            color: Colors.red,
-                                                                                                            size: 15,
-                                                                                                          ),
-                                                                                                          Text(
-                                                                                                            '유통기한 만료',
-                                                                                                            style: TextStyle(
-                                                                                                              fontSize: 12,
-                                                                                                              color: Colors.red,
+                                                                                                          Text.rich(TextSpan(children: [
+                                                                                                            TextSpan(
+                                                                                                                text: '$name',
+                                                                                                                style: TextStyle(
+                                                                                                                  color: Colors.grey.shade700,
+                                                                                                                  fontSize: 18,
+                                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                                )),
+                                                                                                          ])),
+                                              
+                                                                                                          Visibility(
+                                                                                                            visible: expireVisibility,
+                                                                                                            child: Row(
+                                                                                                              children: [
+                                                                                                                Icon(
+                                                                                                                  Icons.report_outlined,
+                                                                                                                  color: Colors.red,
+                                                                                                                  size: 15,
+                                                                                                                ),
+                                                                                                                Text(
+                                                                                                                  '유통기한 만료',
+                                                                                                                  style: TextStyle(
+                                                                                                                    fontSize: 12,
+                                                                                                                    color: Colors.red,
+                                                                                                                  ),
+                                                                                                                ),
+                                                                                                              ],
                                                                                                             ),
                                                                                                           ),
                                                                                                         ],
                                                                                                       ),
                                                                                                     ),
-                                                                                                  ],
-                                                                                                ),
-                                                                                              ),
-                                                                                            ),
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.only(top: 2),
-                                                                                              child: Text.rich(TextSpan(children: [
-                                                                                                TextSpan(
-                                                                                                    text: '$toolExplain',
-                                                                                                    style: TextStyle(
-                                                                                                      color: Colors.grey.shade500,
-                                                                                                      fontSize: 16,
-                                                                                                      fontWeight: FontWeight.bold,
-                                                                                                    )),
-                                                                                              ])),
-                                                                                            ),
-                                                                                            Padding(
-                                                                                              padding: const EdgeInsets.only(top: 5),
-                                                                                              child: Row(
-                                                                                                crossAxisAlignment: CrossAxisAlignment.end,
-                                                                                                children: [
-                                                                                                  Padding(
-                                                                                                    padding: const EdgeInsets.only(right: 10),
-                                                                                                    child: Container(
-                                                                                                      height: 20,
-                                                                                                      width: 35,
-                                                                                                      decoration: BoxDecoration(
-                                                                                                        border: Border.all(
-                                                                                                          width: 1,
-                                                                                                          color: Color(countColor),
-                                                                                                        ),
-                                                                                                        borderRadius: BorderRadius.circular(5),
-                                                                                                        color: Color(countColor),
-                                                                                                      ),
-                                                                                                      child: Padding(
-                                                                                                        padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                                        child: Text(
-                                                                                                          '${customView?[i].count}개',
-                                                                                                          style: TextStyle(
-                                                                                                            color: Color(countText),
-                                                                                                            fontSize: 12,
-                                                                                                            fontWeight: FontWeight.bold,
-                                                                                                          ),
-                                                                                                          textAlign: TextAlign.center,
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                    ),
                                                                                                   ),
                                                                                                   Padding(
-                                                                                                    padding: EdgeInsets.only(right: locatePadding),
-                                                                                                    child: Container(
-                                                                                                      height: 20,
-                                                                                                      width: locateWidth,
-                                                                                                      decoration: BoxDecoration(
-                                                                                                        border: Border.all(
-                                                                                                          width: 1,
-                                                                                                          color: Color(locateColor),
-                                                                                                        ),
-                                                                                                        borderRadius: BorderRadius.circular(5),
-                                                                                                        color: Color(locateColor),
-                                                                                                      ),
-                                                                                                      child: Padding(
-                                                                                                        padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                                        child: Text(
-                                                                                                          '$locate',
+                                                                                                    padding: const EdgeInsets.only(top: 2),
+                                                                                                    child: Text.rich(TextSpan(children: [
+                                                                                                      TextSpan(
+                                                                                                          text: '$toolExplain',
                                                                                                           style: TextStyle(
-                                                                                                            color: Color(locateText),
-                                                                                                            fontSize: 12,
+                                                                                                            color: Colors.grey.shade500,
+                                                                                                            fontSize: explainSize,
                                                                                                             fontWeight: FontWeight.bold,
-                                                                                                          ),
-                                                                                                          textAlign: TextAlign.center,
-                                                                                                        ),
-                                                                                                      ),
-                                                                                                    ),
+                                                                                                          )),
+                                                                                                    ])),
                                                                                                   ),
-                                                                                                  
                                                                                                   Padding(
-                                                                                                    padding: EdgeInsets.only(right: expPadding),
-                                                                                                    child: Container(
-                                                                                                      height: 20,
-                                                                                                      width: expWidth,
-                                                                                                      decoration: BoxDecoration(
-                                                                                                        border: Border.all(
-                                                                                                          width: 1,
-                                                                                                          color: Color(expColor),
-                                                                                                        ),
-                                                                                                        borderRadius: BorderRadius.circular(5),
-                                                                                                        color: Color(expColor),
-                                                                                                      ),
-                                                                                                      child: Padding(
-                                                                                                        padding: const EdgeInsets.only(left: 5, right: 5),
-                                                                                                        child: Text(
-                                                                                                          '$exp',
-                                                                                                          style: TextStyle(
-                                                                                                            color: Color(expText),
-                                                                                                            fontSize: 12,
-                                                                                                            fontWeight: FontWeight.bold,
+                                                                                                    padding: const EdgeInsets.only(top: 5),
+                                                                                                    child: Row(
+                                                                                                      crossAxisAlignment: CrossAxisAlignment.end,
+                                                                                                      children: [
+                                                                                                        Padding(
+                                                                                                          padding: const EdgeInsets.only(right: 10),
+                                                                                                          child: Container(
+                                                                                                            height: 20,
+                                                                                                            width: 35,
+                                                                                                            decoration: BoxDecoration(
+                                                                                                              border: Border.all(
+                                                                                                                width: 1,
+                                                                                                                color: Color(countColor),
+                                                                                                              ),
+                                                                                                              borderRadius: BorderRadius.circular(5),
+                                                                                                              color: Color(countColor),
+                                                                                                            ),
+                                                                                                            child: Padding(
+                                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                              child: Text(
+                                                                                                                '${customView?[i].count}개',
+                                                                                                                style: TextStyle(
+                                                                                                                  color: Color(countText),
+                                                                                                                  fontSize: 12,
+                                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                                ),
+                                                                                                                textAlign: TextAlign.center,
+                                                                                                              ),
+                                                                                                            ),
                                                                                                           ),
-                                                                                                          textAlign: TextAlign.center,
                                                                                                         ),
-                                                                                                      ),
+                                                                                                        Padding(
+                                                                                                          padding: EdgeInsets.only(right: locatePadding),
+                                                                                                          child: Container(
+                                                                                                            height: 20,
+                                                                                                            width: locateWidth,
+                                                                                                            decoration: BoxDecoration(
+                                                                                                              border: Border.all(
+                                                                                                                width: 1,
+                                                                                                                color: Color(locateColor),
+                                                                                                              ),
+                                                                                                              borderRadius: BorderRadius.circular(5),
+                                                                                                              color: Color(locateColor),
+                                                                                                            ),
+                                                                                                            child: Padding(
+                                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                              child: Text(
+                                                                                                                '$locate',
+                                                                                                                style: TextStyle(
+                                                                                                                  color: Color(locateText),
+                                                                                                                  fontSize: 12,
+                                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                                ),
+                                                                                                                textAlign: TextAlign.center,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                        
+                                                                                                        Padding(
+                                                                                                          padding: EdgeInsets.only(right: expPadding),
+                                                                                                          child: Container(
+                                                                                                            height: 20,
+                                                                                                            width: expWidth,
+                                                                                                            decoration: BoxDecoration(
+                                                                                                              border: Border.all(
+                                                                                                                width: 1,
+                                                                                                                color: Color(expColor),
+                                                                                                              ),
+                                                                                                              borderRadius: BorderRadius.circular(5),
+                                                                                                              color: Color(expColor),
+                                                                                                            ),
+                                                                                                            child: Padding(
+                                                                                                              padding: const EdgeInsets.only(left: 5, right: 5),
+                                                                                                              child: Text(
+                                                                                                                '$exp',
+                                                                                                                style: TextStyle(
+                                                                                                                  color: Color(expText),
+                                                                                                                  fontSize: 12,
+                                                                                                                  fontWeight: FontWeight.bold,
+                                                                                                                ),
+                                                                                                                textAlign: TextAlign.center,
+                                                                                                              ),
+                                                                                                            ),
+                                                                                                          ),
+                                                                                                        ),
+                                                                                                      ],
                                                                                                     ),
-                                                                                                  ),
+                                                                                                  )
                                                                                                 ],
                                                                                               ),
-                                                                                            )
-                                                                                          ],
+                                                                                            ],
+                                                                                          ),
                                                                                         ),
-                                                                                      ],
-                                                                                    ),
+                                                                                      ),
+                                                                                    ],
                                                                                   ),
-                                                                                ),
-                                                                              ],
-                                                                            ),
-                                                                          );
-                                                                      },
+                                                                                );
+                                                                            },
+                                                                          ),
+                                                                        ),
+                                                                      ],
                                                                     ),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          );
-                                                        } else
-                                                          return Visibility(
-                                                              visible: false,
-                                                              child:
-                                                                  CircularProgressIndicator());
-                                                      })
-                                                ],
-                                              ),
-                                            ],
-                                          );
-                                        }
-                                        return Center(
-                                          child: Visibility(
-                                              visible: true,
-                                              child: CircularProgressIndicator()),
-                                        );
-                                      }),
-                                ],
-                              ),
+                                                                  ],
+                                                                );
+                                                              } else
+                                                                return Visibility(
+                                                                    visible: false,
+                                                                    child:
+                                                                        CircularProgressIndicator());
+                                                            })
+                                                      ],
+                                                    ),
+                                                  ],
+                                                );
+                                              }
+                                              return Center(
+                                                child: Visibility(
+                                                    visible: true,
+                                                    child: CircularProgressIndicator()),
+                                              );
+                                            }),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                         ],
@@ -1886,89 +2074,94 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
     videoVisible = false;
   }
 
+  bool moreVisible = false;
+  if(imgVisible==true || videoVisible==true) {
+    moreVisible = true;
+  }
+
   double fontSize = 12;
 
   return showDialog(
       context: context,
+      barrierColor: Colors.black.withOpacity(0.3),
+      barrierDismissible: true,
       builder: (BuildContext context) {
-        return Theme(
-          data: Theme.of(context).copyWith(dialogBackgroundColor: Colors.white),
-          child: AlertDialog(
-            content: Container(
-              height: 480,
-              width: 250,
+        return AlertDialog(
+          backgroundColor: Colors.white.withOpacity(0),
+          contentPadding: EdgeInsets.zero,
+          content: Container(
+            decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25)
+            ),
+            height: 500,
+            width: 300,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.start,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                    //mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Flexible(
-                        flex: 1,
-                        child: Visibility(
-                          visible: shopVisible,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.store,
-                              color: Colors.lightBlue.shade300,
-                              size: 30,
-                            ),
-                            onPressed: () {
+                      Visibility(
+                        visible: shopVisible,
+                        child: 
+                        Container(
+                          width: 70,
+                          child: TextButton(
+                          onPressed: () {
+                              Navigator.of(context).pop();
                               _launchInBrowser(shopUrl?[0]);
                             },
-                          ),
-                        ),
-                      ),
-                      Flexible(
-                        flex: 1,
-                        child: Visibility(
-                          visible: imgVisible,
-                          child: IconButton(
-                            icon: Icon(
-                              Icons.image,
-                              color: Colors.lightGreen.shade300,
-                              size: 28,
+                            child: Text(
+                              "구매하기",
+                              style: TextStyle(
+                                color: Colors.blue.shade400,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
                             ),
-                            onPressed: () {
-                              showDefaultImg(context, defaultTool);
-                            },
                           ),
                         ),
                       ),
-                      Flexible(
-                        flex: 1,
-                        child: Visibility(
-                          visible: videoVisible,
-                          child: IconButton(
+                      Visibility(
+                        visible: moreVisible,
+                        child: Container(
+                          width: 60,
+                          child: TextButton(
+                          onPressed: () {
+                              showMore(context, defaultTool, imgVisible, videoVisible);
+                            },
+                            child: Text(
+                              "더보기",
+                              style: TextStyle(
+                                color: Colors.green,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w400,
+                              ),
+                            ),
+                          ),
+                        ), 
+                      ),
+            
+                      Spacer(flex:3),
+            
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          IconButton(
                             icon: Icon(
-                              Icons.videocam,
-                              color: Colors.grey.shade600,
+                              Icons.close,
+                              color: Colors.black,
                               size: 30,
                             ),
                             onPressed: () {
-                              showDefaultVideo(context, defaultTool);
+                              Navigator.of(context).pop();
                             },
                           ),
-                        ),
-                      ),
-                      Flexible(
-                        flex: 3,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            IconButton(
-                              icon: Icon(
-                                Icons.close,
-                                color: Colors.black,
-                                size: 30,
-                              ),
-                              onPressed: () {
-                                Navigator.of(context).pop();
-                              },
-                            ),
-                          ],
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -2126,7 +2319,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                             height: 35,
                             child: ElevatedButton(
                               onPressed: () async {
-                                print(defaultTool.toolId);
+                                Navigator.of(context).pop();
                                 Navigator.push(
                                     context,
                                     MaterialPageRoute(
@@ -2141,6 +2334,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                               style: ButtonStyle(
@@ -2159,249 +2353,224 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                             child: ElevatedButton(
                               onPressed: () async {
                                 showModalBottomSheet(
+                                    barrierColor: Colors.black.withOpacity(0.3),
+                                    backgroundColor: Colors.transparent,
                                     context: context,
                                     builder: (BuildContext context) {
                                       return Container(
-                                        height: 200,
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white, // 모달 배경색
-                                          borderRadius: BorderRadius.only(
-                                            topLeft: Radius.circular(
-                                                0), // 모달 좌상단 라운딩 처리
-                                            topRight: Radius.circular(
-                                                0), // 모달 우상단 라운딩 처리
-                                          ),
-                                        ),
+                                        color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
+                                        height: 130,
                                         child: Center(
                                           child: Column(children: [
-                                            Expanded(
-                                              child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                children: [
-                                                  Text(
-                                                    "삭제하시겠습니까?",
-                                                    style: TextStyle(
-                                                      fontSize: 25,
-                                                      color:
-                                                          Colors.grey.shade800,
-                                                      fontWeight:
-                                                          FontWeight.normal,
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: const EdgeInsets.only(
-                                                  top: 0,
-                                                  bottom: 0,
-                                                  left: 0,
-                                                  right: 0),
-                                              child: Row(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment
-                                                        .spaceBetween,
-                                                children: [
-                                                  Container(
-                                                    width: mediaWidth(
-                                                        context, 0.5),
-                                                    height: 50,
-                                                    child: ElevatedButton(
-                                                      onPressed: () async {
-                                                        final storage =
-                                                            FlutterSecureStorage();
-                                                        final accessToken =
-                                                            await storage.read(
-                                                                key:
-                                                                    'ACCESS_TOKEN');
-                                                        print(
-                                                            "...............");
-
-                                                        var dio =
-                                                            await authDio();
-                                                        dio.options.headers[
-                                                                'Authorization'] =
-                                                            '$accessToken';
-
-                                                        try {
-                                                          final response =
-                                                              await dio.delete(
-                                                                  '/api/v1/user/tool/default',
-                                                                  queryParameters: {
-                                                                'id':
-                                                                    defaultTool
-                                                                        .id
-                                                              });
-
-                                                          if (response
-                                                                  .statusCode ==
-                                                              200) {
-                                                            await Navigator
-                                                                .pushAndRemoveUntil(
-                                                                    context,
-                                                                    MaterialPageRoute(
-                                                                        builder: (BuildContext
-                                                                                context) =>
-                                                                            BulidBottomAppBar(
-                                                                              index: 0,
-                                                                            )),
-                                                                    (route) =>
-                                                                        false);
-                                                          }
-                                                        } catch (e) {
-                                                          showDialog(
-                                                            context: context,
-                                                            barrierDismissible:
-                                                                true, //바깥 영역 터치시 닫을지 여부 결정
-                                                            builder:
-                                                                ((context) {
-                                                              return AlertDialog(
-                                                                insetPadding:
-                                                                    EdgeInsets
-                                                                        .all(0),
-                                                                shape: RoundedRectangleBorder(
-                                                                    borderRadius:
-                                                                        BorderRadius.all(
-                                                                            Radius.circular(5))),
-                                                                title:
-                                                                    Text("오류"),
-                                                                content:
-                                                                    Container(
-                                                                  width:
-                                                                      mediaWidth(
-                                                                          context,
-                                                                          0.7),
+                                            
+                                            Column(
+                                              children: [
+                                                Container(
+                                                  width: mediaWidth(
+                                                      context, 0.9),
+                                                  height: 50,
+                                                  child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      final storage =
+                                                          FlutterSecureStorage();
+                                                      final accessToken =
+                                                          await storage.read(
+                                                              key:
+                                                                  'ACCESS_TOKEN');
+                                                      print(
+                                                          "...............");
+            
+                                                      var dio =
+                                                          await authDio();
+                                                      dio.options.headers[
+                                                              'Authorization'] =
+                                                          '$accessToken';
+            
+                                                      try {
+                                                        final response =
+                                                            await dio.delete(
+                                                                '/api/v1/user/tool/default',
+                                                                queryParameters: {
+                                                              'id':
+                                                                  defaultTool
+                                                                      .id
+                                                            });
+            
+                                                        if (response
+                                                                .statusCode ==
+                                                            200) {
+                                                          await Navigator
+                                                              .pushAndRemoveUntil(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                      builder: (BuildContext
+                                                                              context) =>
+                                                                          BulidBottomAppBar(
+                                                                            index: 0,
+                                                                          )),
+                                                                  (route) =>
+                                                                      false);
+                                                        }
+                                                      } catch (e) {
+                                                        Navigator.of(context).pop(); 
+                                                        Navigator.of(context).pop(); 
+                                                        showDialog(
+                                                          context: context,
+                                                          barrierDismissible:
+                                                              true, //바깥 영역 터치시 닫을지 여부 결정
+                                                          builder:
+                                                              ((context) {
+                                                            return AlertDialog(
+                                                              backgroundColor: Colors.white,
+                                                              insetPadding:
+                                                                  EdgeInsets
+                                                                      .all(0),
+                                                              shape: RoundedRectangleBorder(
+                                                                  borderRadius:
+                                                                      BorderRadius.all(
+                                                                          Radius.circular(5))),
+                                                              title:
+                                                                  Text("오류"),
+                                                              content:
+                                                                  Container(
+                                                                width:
+                                                                    mediaWidth(
+                                                                        context,
+                                                                        0.7),
+                                                                child:
+                                                                    Padding(
+                                                                  padding: const EdgeInsets
+                                                                      .only(
+                                                                      bottom:
+                                                                          0),
+                                                                  child: Text(
+                                                                    '삭제할 수 없는 도구입니다.',
+                                                                    style:
+                                                                        TextStyle(
+                                                                      fontSize:
+                                                                          17,
+                                                                    ),
+                                                                    //textAlign: TextAlign.center,
+                                                                  ),
+                                                                ),
+                                                              ),
+                                                              actionsAlignment:
+                                                                  MainAxisAlignment
+                                                                      .center,
+                                                              actions: <Widget>[
+                                                                Container(
+                                                                  height: 40,
+                                                                  width: mediaWidth(
+                                                                      context,
+                                                                      0.7),
                                                                   child:
-                                                                      Padding(
-                                                                    padding: const EdgeInsets
-                                                                        .only(
-                                                                        bottom:
-                                                                            0),
-                                                                    child: Text(
-                                                                      '삭제할 수 없는 도구입니다.',
+                                                                      ElevatedButton(
+                                                                    onPressed:
+                                                                        () {
+                                                                      Navigator.of(context)
+                                                                          .pop(); //창 닫기
+                                                                    },
+                                                                    child:
+                                                                        Text(
+                                                                      '확인',
                                                                       style:
                                                                           TextStyle(
+                                                                        color:
+                                                                            Colors.white,
                                                                         fontSize:
-                                                                            17,
+                                                                            13,
+                                                                        fontWeight:
+                                                                            FontWeight.normal,
                                                                       ),
-                                                                      //textAlign: TextAlign.center,
+                                                                    ),
+                                                                    style:
+                                                                        ButtonStyle(
+                                                                      backgroundColor: MaterialStateProperty.all(Colors
+                                                                          .grey
+                                                                          .shade400),
+                                                                      shape: MaterialStateProperty.all<RoundedRectangleBorder>(
+                                                                          RoundedRectangleBorder(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(0),
+                                                                      )),
                                                                     ),
                                                                   ),
                                                                 ),
-                                                                actionsAlignment:
-                                                                    MainAxisAlignment
-                                                                        .center,
-                                                                actions: <Widget>[
-                                                                  Container(
-                                                                    height: 40,
-                                                                    width: mediaWidth(
-                                                                        context,
-                                                                        0.7),
-                                                                    child:
-                                                                        ElevatedButton(
-                                                                      onPressed:
-                                                                          () {
-                                                                        Navigator.of(context)
-                                                                            .pop(); //창 닫기
-                                                                      },
-                                                                      child:
-                                                                          Text(
-                                                                        '확인',
-                                                                        style:
-                                                                            TextStyle(
-                                                                          color:
-                                                                              Colors.white,
-                                                                          fontSize:
-                                                                              13,
-                                                                          fontWeight:
-                                                                              FontWeight.normal,
-                                                                        ),
-                                                                      ),
-                                                                      style:
-                                                                          ButtonStyle(
-                                                                        backgroundColor: MaterialStateProperty.all(Colors
-                                                                            .grey
-                                                                            .shade400),
-                                                                        shape: MaterialStateProperty.all<RoundedRectangleBorder>(
-                                                                            RoundedRectangleBorder(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(0),
-                                                                        )),
-                                                                      ),
-                                                                    ),
-                                                                  ),
-                                                                ],
-                                                              );
-                                                            }),
-                                                          );
-                                                        }
-                                                      },
-                                                      child: Text(
-                                                        "삭제",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 13,
-                                                        ),
-                                                      ),
-                                                      style: ButtonStyle(
-                                                        backgroundColor:
-                                                            MaterialStateProperty
-                                                                .all(
-                                                                    Colors.red),
-                                                        shape: MaterialStateProperty.all<
-                                                                RoundedRectangleBorder>(
-                                                            RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            0),
-                                                                side:
-                                                                    BorderSide(
-                                                                  color: Colors
-                                                                      .red,
-                                                                ))),
+                                                              ],
+                                                            );
+                                                          }),
+                                                        );
+                                                      }
+                                                    },
+                                                    child: Text(
+                                                      "도구 삭제",
+                                                      style: TextStyle(
+                                                        color: Colors.red,
+                                                        fontSize: 15,
+                                                        fontWeight: FontWeight.w300,
                                                       ),
                                                     ),
-                                                  ),
-                                                  Container(
-                                                    width: mediaWidth(
-                                                        context, 0.5),
-                                                    height: 50,
-                                                    child: ElevatedButton(
-                                                      onPressed: () async {
-                                                        Navigator.pop(context);
-                                                      },
-                                                      child: Text(
-                                                        "취소",
-                                                        style: TextStyle(
-                                                          color: Colors.white,
-                                                          fontSize: 13,
-                                                        ),
-                                                      ),
-                                                      style: ButtonStyle(
-                                                        backgroundColor:
-                                                            MaterialStateProperty
-                                                                .all(Colors.grey
-                                                                    .shade300),
-                                                        shape: MaterialStateProperty.all<
-                                                                RoundedRectangleBorder>(
-                                                            RoundedRectangleBorder(
-                                                                borderRadius:
-                                                                    BorderRadius
-                                                                        .circular(
-                                                                            0),
-                                                                side:
-                                                                    BorderSide(
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade300,
-                                                                ))),
-                                                      ),
+                                                    style: ButtonStyle(
+                                                      backgroundColor:
+                                                          MaterialStateProperty
+                                                              .all(
+                                                                  Colors.grey.shade300),
+                                                      shape: MaterialStateProperty.all<
+                                                              RoundedRectangleBorder>(
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                              side:
+                                                                  BorderSide(
+                                                                color: Colors.grey.shade300,
+                                                              ))),
                                                     ),
                                                   ),
-                                                ],
-                                              ),
+                                                ),
+            
+                                                Container(
+                                                  height: 10,
+                                                ),
+            
+                                                Container(
+                                                  width: mediaWidth(
+                                                      context, 0.9),
+                                                  height: 50,
+                                                  child: ElevatedButton(
+                                                    onPressed: () async {
+                                                      Navigator.pop(context);
+                                                    },
+                                                    child: Text(
+                                                      "취소",
+                                                      style: TextStyle(
+                                                        color: Colors.blue,
+                                                        fontSize: 15,
+                                                      ),
+                                                    ),
+                                                    style: ButtonStyle(
+                                                      backgroundColor:
+                                                          MaterialStateProperty
+                                                              .all(Colors.grey
+                                                                  .shade200),
+                                                      shape: MaterialStateProperty.all<
+                                                              RoundedRectangleBorder>(
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
+                                                              side:
+                                                                  BorderSide(
+                                                                color: Colors
+                                                                    .grey
+                                                                    .shade200,
+                                                              ))),
+                                                    ),
+                                                  ),
+                                                ),
+                                              ],
                                             )
                                           ]),
                                         ),
@@ -2413,6 +2582,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontSize: 13,
+                                  fontWeight: FontWeight.w400,
                                 ),
                               ),
                               style: ButtonStyle(
@@ -2431,10 +2601,108 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                 ],
               ),
             ),
-            elevation: 10.0,
-            backgroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(25)),
+            
+          ),
+          elevation: 10.0,
+          //backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(25)),
+          ),
+        );
+      });
+}
+
+Future<dynamic> showMore(BuildContext context, defaultTool, imgVisible, videoVisible) {
+
+  return showModalBottomSheet(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.3),
+      backgroundColor: Colors.transparent,
+      builder: (BuildContext context) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            dialogBackgroundColor: Colors.white.withOpacity(0),
+          ),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(context).pop();
+            },
+            child: Container(
+              color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
+              height: 120,
+              width: mediaWidth(context, 1),
+              child: AlertDialog(
+                  backgroundColor: Colors.white.withOpacity(0),
+                  insetPadding: EdgeInsets.all(0),
+                  contentPadding: EdgeInsets.zero,
+                  content: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Visibility(
+                        visible: imgVisible,
+                        child: Container(
+                          width: mediaWidth(context, 0.9),
+                          height: 50,
+                          child: TextButton.icon(
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              showDefaultImg(context, defaultTool);
+                            },
+                            icon: Icon(
+                              Icons.image, 
+                              size: 18,
+                              color: Colors.grey,
+                            ), 
+                            label: Text(
+                              "상세사진 보기",
+                              style: TextStyle(
+                                color: Colors.black,
+                                fontSize: 15,
+                              ),
+                            ),
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            borderRadius: BorderRadius.circular(10)
+                        ),
+                        ),
+                      ), 
+        
+                      Container(
+                        height: 10,
+                      ),
+        
+                      Visibility(
+                        visible: videoVisible,
+                        child: Container(
+                          width: mediaWidth(context, 0.9),
+                          height: 50,
+                          child: TextButton.icon(
+                              onPressed: () {
+                                  Navigator.of(context).pop();
+                                  showDefaultVideo(context, defaultTool);
+                                },
+                                icon: Icon(
+                                  Icons.videocam, 
+                                  size: 18,
+                                  color: Colors.grey,
+                                ), 
+                                label: Text(
+                                  "상세영상 시청하기",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(10)
+                          ),
+                        ),
+                      ), 
+                    ],
+                  )),
             ),
           ),
         );
@@ -2460,6 +2728,7 @@ Future<dynamic> showDefaultImg(BuildContext context, defaultTool) {
             child: AlertDialog(
                 backgroundColor: Colors.white.withOpacity(0),
                 insetPadding: EdgeInsets.all(0),
+                contentPadding: EdgeInsets.zero,
                 content: Container(
                   height: mediaHeight(context, 1),
                   color: Colors.transparent,
@@ -2477,7 +2746,7 @@ Future<dynamic> showDefaultImg(BuildContext context, defaultTool) {
 
 List loadTrainImage(imgurl) {
   String baseUrl =
-      "http://test.elibtest.r-e.kr:8080/api/v1/media/tool/img?name=";
+      "https://elib.elib-app-service.o-r.kr:8080/api/v1/media/tool/img?name=";
 
   List imageList = [];
   for (var img in imgurl) {
@@ -2611,6 +2880,7 @@ Future<dynamic> showDefaultVideo(BuildContext context, defaultTool) {
             child: AlertDialog(
                 backgroundColor: Colors.white.withOpacity(0),
                 insetPadding: EdgeInsets.all(0),
+                contentPadding: EdgeInsets.zero,
                 content: Container(
                   height: mediaHeight(context, 1),
                   width: mediaWidth(context, 1),
@@ -2629,7 +2899,7 @@ Future<dynamic> showDefaultVideo(BuildContext context, defaultTool) {
 
 List loadToolVideo(videourl) {
   String baseUrl =
-      "http://test.elibtest.r-e.kr:8080/api/v1/media/tool/video?name=";
+      "https://elib.elib-app-service.o-r.kr:8080/api/v1/media/tool/video?name=";
 
   List videoList = [];
   for (var video in videourl) {
@@ -2693,6 +2963,7 @@ class _VideoBoxState extends State<VideoBox> {
         Container(
           height: mediaHeight(context, 0.3),
           width: mediaWidth(context, 1),
+          color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
           child: ListView.builder(
               itemCount: videoList?.length,
               itemBuilder: (_, index) {
@@ -2825,258 +3096,240 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
 
   return showDialog(
     context: context,
+    barrierColor: Colors.black.withOpacity(0.3),
+    barrierDismissible: true,
     builder: (BuildContext context) => AlertDialog(
+      backgroundColor: Colors.white.withOpacity(0),
+      contentPadding: EdgeInsets.zero,
       content: Container(
-        height: 480,
-        width: 250,
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                IconButton(
-                  icon: Icon(
-                    Icons.close,
-                    color: Colors.black,
-                    size: 30,
+        decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(25)
+        ),
+        height: 500,
+        width: 300,
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.close,
+                      color: Colors.black,
+                      size: 30,
+                    ),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 5, bottom: 5),
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      width: 1.7,
+                      color: Colors.grey,
+                    ),
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                  child: Padding(
+                    padding: EdgeInsets.all(10),
+                    child: Icon(
+                      Icons.medical_services,
+                      color: Colors.grey,
+                      size: 30,
+                    ),
+                  ),
                 ),
-              ],
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 5, bottom: 5),
-              child: Container(
-                decoration: BoxDecoration(
-                  border: Border.all(
-                    width: 1.7,
-                    color: Colors.grey,
-                  ),
-                  borderRadius: BorderRadius.circular(100),
-                ),
-                child: Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Icon(
-                    Icons.medical_services,
-                    color: Colors.grey,
-                    size: 30,
-                  ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(top: 5, bottom: 15),
+                child: Text(
+                  '${name}',
+                  style: TextStyle(
+                      color: const Color.fromARGB(255, 70, 70, 70),
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold),
                 ),
               ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 5, bottom: 15),
-              child: Text(
-                '${name}',
-                style: TextStyle(
-                    color: const Color.fromARGB(255, 70, 70, 70),
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, bottom: 15, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '보유수량',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    customTool.count.toString(),
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, bottom: 15, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '위치',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${locate}',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, bottom: 15, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '제조일자',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${mfd}',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, bottom: 15, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '유통기한',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${exp}',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(
-                  top: 15, bottom: 15, left: 10, right: 10),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    '상세정보',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  Text(
-                    '${toolExplain}',
-                    style: TextStyle(
-                        color: const Color.fromARGB(255, 70, 70, 70),
-                        fontSize: fontSize,
-                        fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-                padding: const EdgeInsets.only(top: 25, bottom: 10),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 15, bottom: 15, left: 10, right: 10),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Container(
-                      height: 35,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          print(customTool.id);
-                          Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => editCustomToolPage(
-                                        tool: customTool,
-                                        count: customTool.count,
-                                      ))).then((value) {});
-                        },
-                        child: Text(
-                          "도구편집",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
+                    Text(
+                      '보유수량',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      customTool.count.toString(),
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 15, bottom: 15, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '위치',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${locate}',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 15, bottom: 15, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '제조일자',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${mfd}',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 15, bottom: 15, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '유통기한',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${exp}',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.only(
+                    top: 15, bottom: 15, left: 10, right: 10),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '상세정보',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${toolExplain}',
+                      style: TextStyle(
+                          color: const Color.fromARGB(255, 70, 70, 70),
+                          fontSize: fontSize,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                  padding: const EdgeInsets.only(top: 25, bottom: 10),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      Container(
+                        height: 35,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            Navigator.of(context).pop();
+                            Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => editCustomToolPage(
+                                          tool: customTool,
+                                          count: customTool.count,
+                                        ))).then((value) {});
+                          },
+                          child: Text(
+                            "도구편집",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.grey),
+                            shape:
+                                MaterialStateProperty.all<RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
+                            )),
                           ),
                         ),
-                        style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.grey),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(7),
-                          )),
-                        ),
                       ),
-                    ),
-                    Container(
-                      height: 35,
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          showModalBottomSheet(
-                              context: context,
-                              builder: (BuildContext context) {
-                                return Container(
-                                  height: 200,
-                                  decoration: const BoxDecoration(
-                                    color: Colors.white, // 모달 배경색
-                                    borderRadius: BorderRadius.only(
-                                      topLeft:
-                                          Radius.circular(0), // 모달 좌상단 라운딩 처리
-                                      topRight:
-                                          Radius.circular(0), // 모달 우상단 라운딩 처리
-                                    ),
-                                  ),
-                                  child: Center(
-                                    child: Column(children: [
-                                      Expanded(
-                                        child: Column(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Text(
-                                              "삭제하시겠습니까?",
-                                              style: TextStyle(
-                                                fontSize: 25,
-                                                color: Colors.grey.shade800,
-                                                fontWeight: FontWeight.normal,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.only(
-                                            top: 0,
-                                            bottom: 0,
-                                            left: 0,
-                                            right: 0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.spaceBetween,
+                      Container(
+                        height: 35,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            showModalBottomSheet(
+                              barrierColor: Colors.black.withOpacity(0.3),
+                              backgroundColor: Colors.transparent,
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Container(
+                                    color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
+                                    height: 130,
+                                    child: Center(
+                                      child: Column(children: [
+                                       
+                                        Column(
                                           children: [
                                             Container(
-                                              width: mediaWidth(context, 0.5),
+                                              width: mediaWidth(context, 0.9),
                                               height: 50,
                                               child: ElevatedButton(
                                                 onPressed: () async {
@@ -3086,12 +3339,12 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                       await storage.read(
                                                           key: 'ACCESS_TOKEN');
                                                   print("...............");
-
+        
                                                   var dio = await authDio();
                                                   dio.options.headers[
                                                           'Authorization'] =
                                                       '$accessToken';
-
+        
                                                   try {
                                                     final response = await dio
                                                         .delete(
@@ -3099,7 +3352,7 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                             queryParameters: {
                                                           'id': customTool.id
                                                         });
-
+        
                                                     if (response.statusCode ==
                                                         200) {
                                                       await Navigator
@@ -3115,12 +3368,15 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                               (route) => false);
                                                     }
                                                   } catch (e) {
+                                                    Navigator.of(context).pop(); 
+                                                    Navigator.of(context).pop(); 
                                                     showDialog(
                                                       context: context,
                                                       barrierDismissible:
                                                           true, //바깥 영역 터치시 닫을지 여부 결정
                                                       builder: ((context) {
                                                         return AlertDialog(
+                                                          backgroundColor: Colors.white,
                                                           insetPadding:
                                                               EdgeInsets.all(0),
                                                           shape: RoundedRectangleBorder(
@@ -3199,42 +3455,11 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                   }
                                                 },
                                                 child: Text(
-                                                  "삭제",
+                                                  "도구 삭제",
                                                   style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                                style: ButtonStyle(
-                                                  backgroundColor:
-                                                      MaterialStateProperty.all(
-                                                          Colors.red),
-                                                  shape: MaterialStateProperty
-                                                      .all<RoundedRectangleBorder>(
-                                                          RoundedRectangleBorder(
-                                                              borderRadius:
-                                                                  BorderRadius
-                                                                      .circular(
-                                                                          0),
-                                                              side: BorderSide(
-                                                                color:
-                                                                    Colors.red,
-                                                              ))),
-                                                ),
-                                              ),
-                                            ),
-                                            Container(
-                                              width: mediaWidth(context, 0.5),
-                                              height: 50,
-                                              child: ElevatedButton(
-                                                onPressed: () async {
-                                                  Navigator.pop(context);
-                                                },
-                                                child: Text(
-                                                  "취소",
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 13,
+                                                    color: Colors.red,
+                                                    fontSize: 15,
+                                                    fontWeight: FontWeight.w300,
                                                   ),
                                                 ),
                                                 style: ButtonStyle(
@@ -3247,48 +3472,86 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                               borderRadius:
                                                                   BorderRadius
                                                                       .circular(
-                                                                          0),
+                                                                          10),
+                                                              side: BorderSide(
+                                                                color:
+                                                                    Colors.grey.shade300,
+                                                              ))),
+                                                ),
+                                              ),
+                                            ),
+
+                                            Container(
+                                                  height: 10,
+                                            ),
+
+                                            Container(
+                                              width: mediaWidth(context, 0.9),
+                                              height: 50,
+                                              child: ElevatedButton(
+                                                onPressed: () async {
+                                                  Navigator.pop(context);
+                                                },
+                                                child: Text(
+                                                  "취소",
+                                                  style: TextStyle(
+                                                    color: Colors.blue,
+                                                    fontSize: 15,
+                                                  ),
+                                                ),
+                                                style: ButtonStyle(
+                                                  backgroundColor:
+                                                      MaterialStateProperty.all(
+                                                          Colors.grey.shade200),
+                                                  shape: MaterialStateProperty
+                                                      .all<RoundedRectangleBorder>(
+                                                          RoundedRectangleBorder(
+                                                              borderRadius:
+                                                                  BorderRadius
+                                                                      .circular(
+                                                                          10),
                                                               side: BorderSide(
                                                                 color: Colors
                                                                     .grey
-                                                                    .shade300,
+                                                                    .shade200,
                                                               ))),
                                                 ),
                                               ),
                                             ),
                                           ],
-                                        ),
-                                      )
-                                    ]),
-                                  ),
-                                );
-                              });
-                        },
-                        child: Text(
-                          "도구삭제",
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
+                                        )
+                                      ]),
+                                    ),
+                                  );
+                                });
+                          },
+                          child: Text(
+                            "도구삭제",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                          style: ButtonStyle(
+                            backgroundColor:
+                                MaterialStateProperty.all(Colors.red),
+                            shape:
+                                MaterialStateProperty.all<RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(7),
+                            )),
                           ),
                         ),
-                        style: ButtonStyle(
-                          backgroundColor:
-                              MaterialStateProperty.all(Colors.red),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(7),
-                          )),
-                        ),
                       ),
-                    ),
-                  ],
-                )),
-          ],
+                    ],
+                  )),
+            ],
+          ),
         ),
       ),
       elevation: 10.0,
-      backgroundColor: Colors.white,
+      //backgroundColor: Colors.white,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.all(Radius.circular(25)),
       ),
