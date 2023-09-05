@@ -14,7 +14,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:qrscan/qrscan.dart' as scanner;
 import 'dart:convert';
 
-String apiUrl = "http://test.elibtest.r-e.kr:8080/api/v1/media/qr";
+String apiUrl = "https://elib.elib-app-service.o-r.kr:8080/api/v1/media/qr";
 
 class importTool {
   String? toolId;
@@ -1051,3 +1051,4 @@ class NumberFormatter extends TextInputFormatter {
         selection: TextSelection.collapsed(offset: string.length));
   }
 }
+
