@@ -572,9 +572,9 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
-  // @override
-  // bool get wantKeepAlive => true;
+class _HomePageState extends State<HomePage> with AutomaticKeepAliveClientMixin{
+  @override
+  bool get wantKeepAlive => true;
 
   late Future<Score> futureScore;
   late Future<List<familyScore>> futureFamilyScore;
