@@ -1,4 +1,6 @@
+import 'package:elib_project/pages/home_page.dart';
 import 'package:elib_project/pages/tool_regist.dart';
+import 'package:elib_project/pages/train_category.dart';
 import 'package:elib_project/pages/view.dart';
 import 'package:flutter/material.dart';
 import 'package:percent_indicator/percent_indicator.dart';
@@ -17,15 +19,10 @@ double mediaWidth(BuildContext context, double scale) =>
 
 double topFontSize = 20;
 
-String textA = "";
-String textB = "";
-String textC = "";
-String textD = "";
-String textE = "";
+Color tileColor = Colors.grey.shade300;
+Color categoryText = Colors.grey;
 
-Color colorB = Colors.grey.shade600;
-Color colorC = Colors.grey.shade600;
-Color colorD = Colors.grey.shade600;
+const storage = FlutterSecureStorage();
 
 class trainList {
   final int id;
@@ -34,6 +31,7 @@ class trainList {
   final List? videoUrl;
   bool? imgComplete;
   bool? videoComplete;
+  final String? type;
 
   trainList({
     required this.id,
@@ -42,6 +40,7 @@ class trainList {
     required this.videoUrl,
     required this.imgComplete,
     required this.videoComplete,
+    required this.type,
   });
 
   factory trainList.fromJson(Map<String, dynamic> json) {
@@ -52,79 +51,11 @@ class trainList {
       videoUrl: json['videoUrl'],
       imgComplete: json['imgComplete'],
       videoComplete: json['videoComplete'],
+      type: json['type'],
     );
   }
 }
 
-
-int? allTrainCount;
-int? trainCount;
-
-Future<int> loadTrainCount() async {
-  final storage = FlutterSecureStorage();
-  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-  var dio = await authDio();
-  dio.options.headers['Authorization'] = '$accessToken';
-  final response = await dio.get('/api/v1/user/train/count');
-
-  if (response.statusCode == 200) {
-    return response.data;
-  } else {
-    throw Exception('fail');
-  }
-}
-
-Future<List<trainList>> loadTrainList() async {
-  final storage = FlutterSecureStorage();
-  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-  print("access ${accessToken}");
-
-  var dio = await authDio();
-  dio.options.headers['Authorization'] = '$accessToken';
-  final response = await dio.get('/api/v1/train');
-
-  if (response.statusCode == 200) {
-    
-    List<dynamic> data = response.data;
-    List<trainList> list =
-        data.map((dynamic e) => trainList.fromJson(e)).toList();
-
-    init() async {
-      allTrainCount = list.length;
-    }
-    init();
-
-    trainCount = (allTrainCount! - await loadTrainCount());
-
-    void text() async {
-    if(trainCount! == 0) {
-      textA = "";
-      textB = "모든 훈련을 ";
-      textC = "이수완료 ";
-      textD = "했습니다.";
-      textE = "";
-
-      colorB = Colors.grey.shade600;
-      colorC = Colors.green;
-      colorD = Colors.grey.shade600;
-    } else if (trainCount! > 0) {
-      textA = "총 ";
-      textB = "$trainCount";
-      textC = "개의 훈련이 ";
-      textD = "미이수";
-      textE = " 상태입니다.";
-
-      colorB = Colors.red;
-      colorD = Colors.red;
-    } 
-  }
-  text();
-
-    return list;
-  } else {
-    throw Exception('Failed to Load');
-  }
-}
 
 class trainPage extends StatefulWidget {
   const trainPage({super.key});
@@ -133,8 +64,10 @@ class trainPage extends StatefulWidget {
   State<trainPage> createState() => _trainPageState();
 }
 
-class _trainPageState extends State<trainPage>{
-  late Future<List<trainList>> futureTrainList;
+class _trainPageState extends State<trainPage> with AutomaticKeepAliveClientMixin{
+  @override
+  bool get wantKeepAlive => true;
+  
 
   void viewTrain(trainList) {
     Navigator.push(
@@ -150,20 +83,40 @@ class _trainPageState extends State<trainPage>{
 
   @override
   void initState() {
+    loadCategoryTr = initTr();
     futureTrainList = loadTrainList();
+
     super.initState();
   }
-  
 
+  void updateCategoriesTr(int oldIndex, int newIndex) {
+    const storage = FlutterSecureStorage();
+
+    setState(() {
+      if (oldIndex < newIndex) {
+        newIndex--;
+      }
+
+      //움직이는 카테고리
+      final category = trainCategories.removeAt(oldIndex);
+
+      //카테고리의 새 위치
+      trainCategories.insert(newIndex, category);
+    });
+
+    storage.write(key: 'Category_Train', value: jsonEncode(trainCategories));
+  }
+
+  
   @override
   Widget build(BuildContext context) {
     
-
     return MaterialApp(
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-            colorSchemeSeed: Color.fromARGB(255, 255, 255, 255),
-            useMaterial3: true),
+          scaffoldBackgroundColor: Color.fromARGB(255, 250, 250, 250),
+          colorSchemeSeed: Color.fromARGB(0, 241, 241, 241),
+          useMaterial3: true),
         home: GestureDetector(
           onTap: () {
             FocusScope.of(context).unfocus();
@@ -179,6 +132,30 @@ class _trainPageState extends State<trainPage>{
                         fontWeight: FontWeight.bold,
                       ),
                     )),
+              actions: [
+                  Padding(
+                    padding: const EdgeInsets.only(right: 5, bottom: 5),
+                    child: IconButton(
+                      icon: Icon(
+                        Icons.visibility_outlined,
+                        size: 30,
+                        color: Colors.grey.shade500,
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                    builder: (context) => trainCategoryPage())).then((value) {
+                          setState(() {
+                            loadCategoryTr = initTr();
+                            futureTrainList = loadTrainList();
+                          });
+                        });
+                        //Navigator.push(context, MaterialPageRoute(builder: (context) => toolRegistPage()));
+                      },
+                    ),
+                  ),
+                ],
               ),
               body: SafeArea(
                   top: true,
@@ -261,19 +238,188 @@ class _trainPageState extends State<trainPage>{
                         height: mediaHeight(context, 0.03),
                       ),
 
+                      //카테고리
+                      Expanded(
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            //color: Colors.grey.shade300,
+                            height: mediaHeight(context, 1),
+                            width: categoryWidth,
+                            child: Column(
+                              children: [
+                                
+                                Expanded(
+                                  //height: mediaHeight(context, 1) - 10,
+                                  child: FutureBuilder<void>(
+                                    future: loadCategoryTr,
+                                    builder: (context, snapshot) {
+                                      return ReorderableListView.builder(
+                                        onReorder: (oldIndex, newIndex) =>
+                                            updateCategoriesTr(oldIndex, newIndex),
+                                        itemCount: trainCategories.length,
+                                        itemBuilder: (context, i) {
+                                          var category = trainCategories[i];
+                                          
+                                          if(category == selectedCategoryTr) {
+                                            tileColor = Colors.grey.shade400;
+                                            categoryText = Colors.white;
+                                          } else { 
+                                            tileColor = Colors.white;
+                                            categoryText = Colors.grey.shade400;
+                                          }
+                                
+                                        return
+                                            Container(
+                                              //color: tileColor,
+                                              //color: Colors.white,
+                                              key: Key(category),
+                                              child: Padding(
+                                                padding: const EdgeInsets.only(top: 10, bottom: 10, left: 5, right: 5),
+                                                child: Container(
+                                                  height: 30,
+                                                    decoration: BoxDecoration(
+                                                      color: tileColor,
+                                                      borderRadius:
+                                                          BorderRadius.circular(20),
+                                                      border: Border.all(
+                                                        color: categoryText,
+                                                        width: 1,
+                                                      ),
+                                                    ),
+                                                  child: Stack(
+                                                    children: [
+                                                      Center(
+                                                        child: Text(
+                                                          category,
+                                                          style: TextStyle(
+                                                            fontWeight: FontWeight.normal,
+                                                            color: categoryText,
+                                                            fontSize: 15,
+                                                          ),
+                                                          textAlign: TextAlign.center,
+                                                        ),
+                                                      ),
+                                                      ListTile(
+                                                      //tileColor: tileColor,
+                                                      // title: Text(
+                                                      //   category,
+                                                      //   style: TextStyle(
+                                                      //     fontWeight: FontWeight.normal,
+                                                      //     color: categoryText,
+                                                      //     fontSize: 15,
+                                                      //   ),
+                                                      // ),
+                                                      onTap: () {
+                                                                  
+                                                        selectedCategoryTr = category;
+                                                    
+                                                        selectedLengthTr = allTrain?.length;
+                                                        
+                                                        switch (selectedCategoryTr) {
+                                                          case "전체":
+                                                            selectedLengthTr = allTrain?.length;
+                                                            trainView = allTrain;
+                                                          case "화재":
+                                                            selectedLengthTr = fireTr?.length;
+                                                            trainView = fireTr;
+                                                          case "응급":
+                                                            selectedLengthTr = emergentTr?.length;
+                                                            trainView = emergentTr;
+                                                          case "지진":
+                                                            selectedLengthTr = quakeTr?.length;
+                                                            trainView = quakeTr;
+                                                          case "생존":
+                                                            selectedLengthTr = surviveTr?.length;
+                                                            trainView = surviveTr;
+                                                          case "전쟁":
+                                                            selectedLengthTr = warTr?.length;
+                                                            trainView = warTr;
+                                                          case "수해":
+                                                            selectedLengthTr = floodTr?.length;
+                                                            trainView = floodTr;
+                                                          case "기타":
+                                                            selectedLengthTr = etcTr?.length;
+                                                            trainView = etcTr;
+                                                        }
+                                                        print(selectedCategoryTr);
+                                                    
+                                                        setState(() {
+                                                        });
+                                                      },
+                                                    ),
+                                                    ]
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                        }
+                                        
+                                      );
+                                    }
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+
                       //훈련 리스트 출력부분
                       Expanded(
                         child: SingleChildScrollView(
-                          keyboardDismissBehavior:
-                              ScrollViewKeyboardDismissBehavior.onDrag,
                           child: Column(
                             children: [
                               FutureBuilder<List<trainList>>(
                                   future: futureTrainList,
                                   builder: (context, snapshot) {
+
+                                    switch (selectedCategoryTr) {
+                                      case "전체":
+                                        trainView = allTrain;
+                                        selectedLengthTr = allTrain?.length;
+                                      case "화재":
+                                        trainView = fireTr;
+                                        selectedLengthTr = fireTr?.length;
+                                      case "응급":
+                                        trainView = emergentTr;
+                                        selectedLengthTr = emergentTr?.length;
+                                      case "지진":
+                                        trainView = quakeTr;
+                                        selectedLengthTr = quakeTr?.length;
+                                      case "생존":
+                                        trainView = surviveTr;
+                                        selectedLengthTr = surviveTr?.length;
+                                      case "전쟁":
+                                        trainView = warTr;
+                                        selectedLengthTr = warTr?.length;
+                                      case "수해":
+                                        trainView = floodTr;
+                                        selectedLengthTr = floodTr?.length;
+                                      case "기타":
+                                        trainView = etcTr;
+                                        selectedLengthTr = etcTr?.length;
+                                    }
+
                                     if (snapshot.hasError)
                                       return Text('${snapshot.error}');
-                                    else if (snapshot.hasData)
+
+                                    if (trainView?.isEmpty == true && selectedLengthTr == 0) {
+                                      return Container(
+                                        height: mediaHeight(context, 0.7),
+                                        child: Column(
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
+                                            children: [
+                                              Text("empty")
+                                            ]),
+                                      );
+                                    }
+
+                                    if (trainView!=null)
+                                    print(selectedCategoryTr);
+                                    print(selectedLengthTr);
+                                    print(trainView);
+
                                       return Column(
                                         children: [
                                           Column(
@@ -283,57 +429,55 @@ class _trainPageState extends State<trainPage>{
                                             crossAxisAlignment:
                                                 CrossAxisAlignment.start,
                                             children: [
-                                              Padding(
-                                                  padding:
-                                                      const EdgeInsets.only(
-                                                          left: 25, right: 25),
+                                              SizedBox(
+                                                width: MediaQuery.of(context).size.width - categorySpace,
+                                                child: Padding(
+                                                  padding: const EdgeInsets.only(left: 10, right: 10),
                                                   child: ListView.builder(
                                                       shrinkWrap: true,
                                                       physics:
                                                           const NeverScrollableScrollPhysics(),
                                                       itemCount:
-                                                          snapshot.data?.length,
+                                                          selectedLengthTr,
                                                       scrollDirection:
                                                           Axis.vertical,
                                                       itemBuilder:
                                                           (context, i) {
                                                         String? name;
-                                                        if (snapshot.data?[i]
+                                                        if (trainView?[i]
                                                                     .name ==
                                                                 null ||
-                                                            snapshot.data?[i]
+                                                            trainView?[i]
                                                                     .name ==
                                                                 "") {
                                                           name = "test";
                                                         } else {
-                                                          name = snapshot
-                                                              .data?[i].name;
+                                                          name = trainView?[i].name;
                                                         }
-
+                                                                                              
                                                         List? videoUrl =
-                                                            snapshot.data?[i]
+                                                            trainView?[i]
                                                                 .videoUrl;
-                                                        List? imgUrl = snapshot
-                                                            .data?[i].imgUrl;
-
+                                                        List? imgUrl = trainView?[i].imgUrl;
+                                                                                              
                                                         bool videoVisible =
                                                             true;
                                                         if (videoUrl!.isEmpty ==
                                                             true) {
                                                           videoVisible = false;
                                                         }
-
+                                                                                              
                                                         bool imgVisible = true;
                                                         if (imgUrl!.isEmpty ==
                                                             true) {
                                                           imgVisible = false;
                                                         }
-
+                                                                                              
                                                         IconData? iconName;
                                                         int iconColor;
-
-                                                        bool? imgComplete = snapshot.data?[i].imgComplete;
-                                                        bool? videoComplete = snapshot.data?[i].videoComplete;
+                                                                                              
+                                                        bool? imgComplete = trainView?[i].imgComplete;
+                                                        bool? videoComplete = trainView?[i].videoComplete;
                                                         if(imgComplete == true && videoComplete == true) {
                                                           iconName = Icons.check_circle;
                                                         iconColor = 0xFF38AE5D;
@@ -341,10 +485,10 @@ class _trainPageState extends State<trainPage>{
                                                           iconName = Icons.report_outlined;
                                                           iconColor = 0xFFF16969;
                                                         }
-
+                                                                                              
                                                         return InkWell(
                                                             onTap: () {
-                                                              viewTrain(snapshot.data?[i]);
+                                                              viewTrain(trainView?[i]);
                                                             },
                                                             child: Row(
                                                               crossAxisAlignment:
@@ -419,7 +563,9 @@ class _trainPageState extends State<trainPage>{
                                                                 ),
                                                               ],
                                                             ));
-                                                      })),
+                                                      }),
+                                                ),
+                                              ),
                                             ],
                                           ),
                                         ],
@@ -434,9 +580,15 @@ class _trainPageState extends State<trainPage>{
                             ],
                           ),
                         ),
-                      )
-                    ],
-                  ))),
-        ));
+                      ),
+                    ]
+                  ),
+                ),
+              ]
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }
