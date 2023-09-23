@@ -42,7 +42,6 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
   }
 
   Future<void> init() async {
-    print("init함수 시작");
 
     String? toolStorage = await storage.read(key: 'Category_Tool');
     String? toolStorage2 = await storage.read(key: 'Category_Tool_2');
@@ -57,15 +56,12 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
     if(toolStorage2 == null || toolStorage2 == "") {
       toolCategories2 = toolCategories;
       await storage.write(key: 'Category_Tool_2', value: jsonEncode(toolCategories2));
+
+      toolStorage2 = await storage.read(key: 'Category_Tool_2');
+      toolCategories2 = jsonDecode(toolStorage2!);
     } else {
       toolCategories2 = jsonDecode(toolStorage2);
     }
-
-    print("-------------------------------");
-    print(toolCategories);
-    print(toolCategories2);
-    print("-------------------------------");
-    print("init함수 끝");
   }
 
   void updateCategories(int oldIndex, int newIndex) {
@@ -81,8 +77,6 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
       toolCategories2.insert(newIndex, category);
     });
 
-    print('toolCategories $toolCategories');
-    print('toolCategories2 $toolCategories2');
     storage.write(key: 'Category_Tool_2', value: jsonEncode(toolCategories2));
 
     List temp = [];
@@ -96,9 +90,6 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
 
     toolCategories = temp;
     storage.write(key: 'Category_Tool', value: jsonEncode(temp));
-
-    print('toolCategories $toolCategories');
-    print('toolCategories2 $toolCategories2');
   }
 
   @override
@@ -187,7 +178,7 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
                                      width: mediaWidth(context, 1),
                                      height: containerHeight,
                                       child: Row(
-                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        //crossAxisAlignment: CrossAxisAlignment.center,
                                         children: [
                                           Stack(
                                             children:[
@@ -196,19 +187,16 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
                                                 width: mediaWidth(context, 1),
                                                 child: Padding(
                                                   padding: const EdgeInsets.only(left: 10),
-                                                  child: Column( 
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                                    children: [
-                                                      Text(
-                                                        category,
-                                                        style: TextStyle(
-                                                          fontWeight: FontWeight.bold,
-                                                          color: Colors.grey.shade600,
-                                                          fontSize: 20,
-                                                        ),
+                                                  child: Padding(
+                                                    padding: const EdgeInsets.only(top: 5),
+                                                    child: Text(
+                                                      category,
+                                                      style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.grey.shade600,
+                                                        fontSize: 20,
                                                       ),
-                                                    ],
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -231,8 +219,6 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
                                                               color: Colors.grey,
                                                             ),
                                                             onPressed: () async {
-                                                              print(category);
-
                                                               if(toolCategories.contains(category) == true) {
                                                                 toolCategories.removeWhere((item) => item == category);     
                                                                 await storage.write(key: 'Category_Tool', value: jsonEncode(toolCategories));
@@ -250,10 +236,7 @@ class _toolCategoryPageState extends State<toolCategoryPage> {
 
                                                                 toolCategories = temp;
                                                                 await storage.write(key: 'Category_Tool', value: jsonEncode(temp));
-                                                              }   
-
-                                                              print('toolCategories $toolCategories');
-                                                              print('toolCategories2 $toolCategories2');
+                                                              }  
                                                               setState(() {   
                                                               });                   //Navigator.push(context, MaterialPageRoute(builder: (context) => toolRegistPage()));
                                                             },
