@@ -45,11 +45,6 @@ Color detailColor = Colors.green;
 Color briefColor = Colors.grey;
 double explainSize = 16;
 
-double fullWidth = 0;
-double categoryWidth = 70;
-double categoryLine = 0;
-double categorySpace = categoryWidth + categoryLine;
-
 Color tileColor = Colors.grey.shade300;
 Color colorAll = Colors.green.shade300; //전체
 Color colorFire = Colors.pink.shade300; //화재
@@ -230,31 +225,10 @@ class _toolManagePageState extends State<toolManagePage> with AutomaticKeepAlive
     futureDefaultTool = loadDefaultTool();
     futureCustomTool = loadCustomTool();
     
-    //super.initState();
+    super.initState();
   }
 
-  Future<void> init() async {
-    print("init함수 시작");
-
-    String? toolStorage = await storage.read(key: 'Category_Tool');
-
-    if(toolStorage == null || toolStorage == "") {
-      toolCategories = ["전체", "화재", "응급", "지진", "생존", "전쟁", "수해", "기타"];
-      await storage.write(key: 'Category_Tool', value: jsonEncode(toolCategories));
-    } else {
-      toolCategories = jsonDecode(toolStorage!);
-    }
-
-    if(selectedCategory == null || selectedCategory == "") {
-      selectedCategory = toolCategories[0];
-    } else {
-      if (toolCategories.contains(selectedCategory) == false) {
-        selectedCategory = toolCategories[0];
-      }
-    }
-
-    print("init함수 끝");
-  }
+  
 
   void updateCategories(int oldIndex, int newIndex) {
     setState(() {
@@ -282,17 +256,17 @@ class _toolManagePageState extends State<toolManagePage> with AutomaticKeepAlive
     //스캔 완료하면 _output 에 문자열 저장하면서 상태 변경 요청.
     setState(() => _output = barcode!);
 
-    _output = _output!.substring(apiUrl.length);
-    _output = _output!.replaceAll('?', '{"');
-    _output = _output!.replaceAll('=', '":"');
-    _output = _output!.replaceAll('&', '","');
-    _output = _output! + '"}';
-    print(_output);
-
     Map<String, dynamic> temp;
     importTool tool;
 
     try {
+      _output = _output!.substring(apiUrl.length);
+      _output = _output!.replaceAll('?', '{"');
+      _output = _output!.replaceAll('=', '":"');
+      _output = _output!.replaceAll('&', '","');
+      _output = _output! + '"}';
+      //print("output: $_output");
+
       temp = jsonDecode(_output!);
       tool = importTool.fromJson(temp);
 
@@ -330,50 +304,53 @@ class _toolManagePageState extends State<toolManagePage> with AutomaticKeepAlive
             barrierDismissible: true, //바깥 영역 터치시 닫을지 여부 결정
             builder: ((context) {
               return AlertDialog(
+                elevation: 0.0,
+                backgroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.all(Radius.circular(5))),
-                //title: Text("제목"),
-                content: Text(
-                  'Qr을 지원하지 않는 도구입니다.',
-                  style: TextStyle(
-                    fontSize: 17,
+                title: Text("알림"),
+                content: Container(
+                  width: mediaWidth(context, 0.65),
+                  child: Text(
+                    'Qr을 지원하지 않는 도구입니다.',
+                    style: TextStyle(
+                      fontSize: 17,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 actions: <Widget>[
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 5),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          width: mediaWidth(context, 0.15),
-                          height: 35,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.of(context).pop(); //창 닫기
-                            },
-                            child: Text(
-                              '확인',
-                              style: TextStyle(
-                                color: Colors.green,
-                                fontSize: 13,
-                                fontWeight: FontWeight.normal,
-                              ),
-                            ),
-                            style: ButtonStyle(
-                              backgroundColor: MaterialStateProperty.all(
-                                  const Color.fromARGB(255, 255, 255, 255)),
-                              shape:
-                                  MaterialStateProperty.all<RoundedRectangleBorder>(
-                                      RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(5),
-                              )),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        //color: Colors.green,
+                        width: mediaWidth(context, 0.15),
+                        height: 35,
+                        child: TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop(); //창 닫기
+                          },
+                          child: Text(
+                            '확인',
+                            style: TextStyle(
+                              color: Colors.blue,
+                              fontSize: 13,
+                              fontWeight: FontWeight.normal,
                             ),
                           ),
+                          style: ButtonStyle(
+                            backgroundColor: MaterialStateProperty.all(
+                                const Color.fromARGB(255, 255, 255, 255)),
+                            shape:
+                                MaterialStateProperty.all<RoundedRectangleBorder>(
+                                    RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(5),
+                            )),
+                          ),
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
               );
@@ -386,50 +363,53 @@ class _toolManagePageState extends State<toolManagePage> with AutomaticKeepAlive
         barrierDismissible: true, //바깥 영역 터치시 닫을지 여부 결정
         builder: ((context) {
           return AlertDialog(
+            insetPadding: EdgeInsets.all(0),
+            elevation: 0.0,
+            backgroundColor: Colors.white,
             shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.all(Radius.circular(5))),
-            //title: Text("제목"),
-            content: Text(
-              'Qr을 지원하지 않는 도구입니다.',
-              style: TextStyle(
-                fontSize: 17,
+            title: Text("알림"),
+            content: Container(
+              width: mediaWidth(context, 0.65),
+              child: Text(
+                'Qr을 지원하지 않는 도구입니다.',
+                style: TextStyle(
+                  fontSize: 17,
+                ),
+                textAlign: TextAlign.center,
               ),
-              textAlign: TextAlign.center,
             ),
             actions: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(bottom: 5),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Container(
-                      width: mediaWidth(context, 0.15),
-                      height: 35,
-                      child: TextButton(
-                        onPressed: () {
-                          Navigator.of(context).pop(); //창 닫기
-                        },
-                        child: Text(
-                          '확인',
-                          style: TextStyle(
-                            color: Colors.green,
-                            fontSize: 13,
-                            fontWeight: FontWeight.normal,
-                          ),
-                        ),
-                        style: ButtonStyle(
-                          backgroundColor: MaterialStateProperty.all(
-                              const Color.fromARGB(255, 255, 255, 255)),
-                          shape:
-                              MaterialStateProperty.all<RoundedRectangleBorder>(
-                                  RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5),
-                          )),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Container(
+                    width: mediaWidth(context, 0.15),
+                    height: 35,
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop(); //창 닫기
+                      },
+                      child: Text(
+                        '확인',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 13,
+                          fontWeight: FontWeight.normal,
                         ),
                       ),
+                      style: ButtonStyle(
+                        backgroundColor: MaterialStateProperty.all(
+                            const Color.fromARGB(255, 255, 255, 255)),
+                        shape:
+                            MaterialStateProperty.all<RoundedRectangleBorder>(
+                                RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        )),
+                      ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           );
@@ -2327,7 +2307,8 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                             editDefaultToolPage(
                                               tool: defaultTool,
                                               count: defaultTool.count,
-                                            ))).then((value) {});
+                                            ))).then((value) {
+                                });
                               },
                               child: Text(
                                 "도구편집",
@@ -2353,12 +2334,13 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                             child: ElevatedButton(
                               onPressed: () async {
                                 showModalBottomSheet(
-                                    barrierColor: Colors.black.withOpacity(0.3),
+                                    elevation: 0.0, //이거추가하기
+                                    barrierColor: Colors.black.withOpacity(0.2),
                                     backgroundColor: Colors.transparent,
                                     context: context,
                                     builder: (BuildContext context) {
                                       return Container(
-                                        color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
+                                        //color: Color.fromARGB(255, 255, 255, 255).withOpacity(1),
                                         height: 130,
                                         child: Center(
                                           child: Column(children: [
@@ -2391,7 +2373,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                                             await dio.delete(
                                                                 '/api/v1/user/tool/default',
                                                                 queryParameters: {
-                                                              'id':
+                                                              'toolId':
                                                                   defaultTool
                                                                       .id
                                                             });
@@ -2507,14 +2489,14 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                                       style: TextStyle(
                                                         color: Colors.red,
                                                         fontSize: 15,
-                                                        fontWeight: FontWeight.w300,
+                                                        fontWeight: FontWeight.w400,
                                                       ),
                                                     ),
                                                     style: ButtonStyle(
                                                       backgroundColor:
                                                           MaterialStateProperty
                                                               .all(
-                                                                  Colors.grey.shade300),
+                                                                  Color.fromARGB(255, 235, 235, 235)),
                                                       shape: MaterialStateProperty.all<
                                                               RoundedRectangleBorder>(
                                                           RoundedRectangleBorder(
@@ -2524,7 +2506,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                                                           10),
                                                               side:
                                                                   BorderSide(
-                                                                color: Colors.grey.shade300,
+                                                                color: Color.fromARGB(255, 235, 235, 235),
                                                               ))),
                                                     ),
                                                   ),
@@ -2552,8 +2534,9 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                                     style: ButtonStyle(
                                                       backgroundColor:
                                                           MaterialStateProperty
-                                                              .all(Colors.grey
-                                                                  .shade200),
+                                                              .all(Colors
+                                                                    .grey
+                                                                    .shade100),
                                                       shape: MaterialStateProperty.all<
                                                               RoundedRectangleBorder>(
                                                           RoundedRectangleBorder(
@@ -2565,7 +2548,7 @@ Future<dynamic> showDefault(BuildContext context, defaultTool) {
                                                                   BorderSide(
                                                                 color: Colors
                                                                     .grey
-                                                                    .shade200,
+                                                                    .shade100,
                                                               ))),
                                                     ),
                                                   ),
@@ -3316,12 +3299,13 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                         child: ElevatedButton(
                           onPressed: () async {
                             showModalBottomSheet(
-                              barrierColor: Colors.black.withOpacity(0.3),
+                              elevation: 0.0,
+                              barrierColor: Colors.black.withOpacity(0.2),
                               backgroundColor: Colors.transparent,
                                 context: context,
                                 builder: (BuildContext context) {
                                   return Container(
-                                    color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
+                                    //color: Color.fromARGB(255, 255, 255, 255).withOpacity(0),
                                     height: 130,
                                     child: Center(
                                       child: Column(children: [
@@ -3350,7 +3334,7 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                         .delete(
                                                             '/api/v1/user/tool/custom',
                                                             queryParameters: {
-                                                          'id': customTool.id
+                                                          'toolId': customTool.id
                                                         });
         
                                                     if (response.statusCode ==
@@ -3459,13 +3443,13 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                   style: TextStyle(
                                                     color: Colors.red,
                                                     fontSize: 15,
-                                                    fontWeight: FontWeight.w300,
+                                                    fontWeight: FontWeight.w400,
                                                   ),
                                                 ),
                                                 style: ButtonStyle(
                                                   backgroundColor:
                                                       MaterialStateProperty.all(
-                                                          Colors.grey.shade300),
+                                                          Color.fromARGB(255, 235, 235, 235)),
                                                   shape: MaterialStateProperty
                                                       .all<RoundedRectangleBorder>(
                                                           RoundedRectangleBorder(
@@ -3475,7 +3459,7 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                                           10),
                                                               side: BorderSide(
                                                                 color:
-                                                                    Colors.grey.shade300,
+                                                                    Color.fromARGB(255, 235, 235, 235),
                                                               ))),
                                                 ),
                                               ),
@@ -3502,7 +3486,7 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                 style: ButtonStyle(
                                                   backgroundColor:
                                                       MaterialStateProperty.all(
-                                                          Colors.grey.shade200),
+                                                          Colors.grey.shade100),
                                                   shape: MaterialStateProperty
                                                       .all<RoundedRectangleBorder>(
                                                           RoundedRectangleBorder(
@@ -3513,7 +3497,7 @@ Future<dynamic> showCustom(BuildContext context, customTool) {
                                                               side: BorderSide(
                                                                 color: Colors
                                                                     .grey
-                                                                    .shade200,
+                                                                    .shade100,
                                                               ))),
                                                 ),
                                               ),
