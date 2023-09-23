@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:elib_project/pages/tool_manage.dart';
 import 'package:elib_project/pages/tool_regist_qr.dart';
+import 'package:elib_project/pages/train_manage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -18,8 +19,15 @@ import 'package:uni_links/uni_links.dart';
 import '../models/bottom_app_bar.dart';
 import 'package:elib_project/pages/membermanagement_page.dart';
 
-//재난키트 화면 로딩 줄이기용
+int initTest = 0;
+int safetyColor = 0;
 
+double fullWidth = 0;
+double categoryWidth = 70;
+double categoryLine = 0;
+double categorySpace = categoryWidth + categoryLine;
+
+//재난키트 화면 로딩 줄이기용
 late Future<List<defaultTool>> futureDefaultTool;
 late Future<List<customTool>> futureCustomTool;
 late Future<void> loadCategory;
@@ -33,6 +41,8 @@ int? selectedCustomLength = 0;
 
 List<defaultTool>? allDefault;
 List<customTool>? allCustom;
+List<defaultTool>? defaultView;
+List<customTool>? customView;
 
 List<defaultTool> fire = [];
 List<defaultTool> emergent = [];
@@ -41,8 +51,29 @@ List<defaultTool> survive = [];
 List<defaultTool> war = [];
 List<defaultTool> flood = [];
 
-List<defaultTool>? defaultView;
-List<customTool>? customView;
+int fireCount = 0;
+int emergentCount = 0;
+int quakeCount = 0;
+int surviveCount = 0;
+int warCount = 0;
+int floodCount = 0;
+int etcCount = 0;
+
+int fireCountTr = 0;
+int emergentCountTr = 0;
+int quakeCountTr = 0;
+int surviveCountTr = 0;
+int warCountTr = 0;
+int floodCountTr = 0;
+int etcCountTr = 0;
+
+int fireCountTrCk = 0;
+int emergentCountTrCk = 0;
+int quakeCountTrCk = 0;
+int surviveCountTrCk = 0;
+int warCountTrCk = 0;
+int floodCountTrCk = 0;
+int etcCountTrCk = 0;
 
 Future<List<defaultTool>> loadDefaultTool() async {
   print("future default 시작"); 
@@ -57,12 +88,6 @@ Future<List<defaultTool>> loadDefaultTool() async {
   if (response.statusCode == 200) {
     List<dynamic> data = response.data;
     List<defaultTool> list = data.map((dynamic e) => defaultTool.fromJson(e)).toList();
-
-    //토큰확인용
-    final accessToken = await storage.read(key: 'ACCESS_TOKEN');
-    final refreshToken = await storage.read(key: 'REFRESH_TOKEN');
-    print("newaccess ${accessToken}");
-    print("newrefresh ${refreshToken}");
 
     allDefault = list;
     defaultView = allDefault;
@@ -114,14 +139,21 @@ loading(list) async{
     war = [];
     flood = [];
 
+    fireCount = 0;
+    emergentCount = 0;
+    quakeCount = 0;
+    surviveCount = 0;
+    warCount = 0;
+    floodCount = 0;
+
     for(var i = 0; i < list.length; i++) {
       switch (list[i].type) {
-        case "화재" : fire.add(list[i]);
-        case "응급" : emergent.add(list[i]);
-        case "지진" : quake.add(list[i]);
-        case "생존" : survive.add(list[i]);
-        case "전쟁" : war.add(list[i]);
-        case "수해" : flood.add(list[i]);
+        case "화재" : fire.add(list[i]); fireCount += (list[i].count) as int;
+        case "응급" : emergent.add(list[i]); emergentCount += (list[i].count) as int;
+        case "지진" : quake.add(list[i]); quakeCount += (list[i].count) as int;
+        case "생존" : survive.add(list[i]); surviveCount += (list[i].count) as int;
+        case "전쟁" : war.add(list[i]); warCount += (list[i].count) as int;
+        case "수해" : flood.add(list[i]); floodCount += (list[i].count) as int;
       }
     }
 }
@@ -149,6 +181,15 @@ Future<List<customTool>> loadCustomTool() async {
       selectedCustomLength = 0;
     }
 
+    if(etcCount != 0) {
+      etcCount = 0;
+    }
+
+    for(int i =0; i<list.length; i++) {
+      etcCount += (list[i].count) as int;
+      print("etcCount---------- $etcCount");
+    }
+
     print("future custom 끝");
 
     return list;
@@ -156,7 +197,244 @@ Future<List<customTool>> loadCustomTool() async {
     throw Exception('Failed to Load');
   }
 }
-///////////////////////////////////////////////////////////////////////
+
+Future<void> init() async {
+    final storage = FlutterSecureStorage();
+    String? toolStorage = await storage.read(key: 'Category_Tool');
+
+    if(toolStorage == null || toolStorage == "") {
+      toolCategories = ["전체", "화재", "응급", "지진", "생존", "전쟁", "수해", "기타"];
+      await storage.write(key: 'Category_Tool', value: jsonEncode(toolCategories));
+    } else {
+      toolCategories = jsonDecode(toolStorage!);
+    }
+
+    if(selectedCategory == null || selectedCategory == "") {
+      selectedCategory = toolCategories[0]; 
+    } else {
+      if (toolCategories.contains(selectedCategory) == false) {
+        selectedCategory = toolCategories[0];
+      }
+    }
+  }
+
+//////////////////////////////////////////////////////////////////////////
+  
+late Future<List<trainList>> futureTrainList;
+late Future<void> loadCategoryTr;
+
+List trainCategories = [];
+String? selectedCategoryTr;
+
+int? selectedLengthTr = 0;
+
+List<trainList>? allTrain;
+List<trainList>? trainView;
+
+List<trainList> fireTr = [];
+List<trainList> emergentTr = [];
+List<trainList> quakeTr = [];
+List<trainList> surviveTr = [];
+List<trainList> warTr = [];
+List<trainList> floodTr = [];
+List<trainList> etcTr = [];
+
+int? allTrainCount;
+int? trainCount;
+
+String textA = "";
+String textB = "";
+String textC = "";
+String textD = "";
+String textE = "";
+
+Color colorB = Colors.grey.shade600;
+Color colorC = Colors.grey.shade600;
+Color colorD = Colors.grey.shade600;
+
+Future<int> loadTrainCount() async {
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/user/train/count');
+
+  if (response.statusCode == 200) {
+    return response.data;
+  } else {
+    throw Exception('fail');
+  }
+}
+
+Future<List<trainList>> loadTrainList() async {
+  final storage = FlutterSecureStorage();
+  final accessToken = await storage.read(key: 'ACCESS_TOKEN');
+  print("access ${accessToken}");
+
+  var dio = await authDio();
+  dio.options.headers['Authorization'] = '$accessToken';
+  final response = await dio.get('/api/v1/train');
+
+  if (response.statusCode == 200) {
+    
+    List<dynamic> data = response.data;
+    List<trainList> list =
+        data.map((dynamic e) => trainList.fromJson(e)).toList();
+
+    init() async {
+      allTrainCount = list.length;
+    }
+    init();
+
+    trainCount = (allTrainCount! - await loadTrainCount());
+
+
+  text(trainCount);
+
+  allTrain = list;
+  trainView = allTrain;
+
+  loadingTr(allTrain);
+
+  switch (selectedCategory) {
+        case "전체":
+          selectedLengthTr = allTrain?.length;
+          trainView = allTrain;
+        case "화재":
+          selectedLengthTr = fireTr?.length;
+          trainView = fireTr;
+        case "응급":
+          selectedLengthTr = emergentTr?.length;
+          trainView = emergentTr;
+        case "지진":
+          selectedLengthTr = quakeTr?.length;
+          trainView = quakeTr;
+        case "생존":
+          selectedLengthTr = surviveTr?.length;
+          trainView = surviveTr;
+        case "전쟁":
+          selectedLengthTr = warTr?.length;
+          trainView = warTr;
+        case "수해":
+          selectedLengthTr = floodTr?.length;
+          trainView = floodTr;
+        case "기타":
+        selectedLengthTr = etcTr?.length;
+        trainView = etcTr;
+      }
+
+    return list;
+  } else {
+    throw Exception('Failed to Load');
+  }
+}
+
+loadingTr(list) async{
+
+    fireTr = [];
+    emergentTr = [];
+    quakeTr = [];
+    surviveTr = [];
+    warTr = [];
+    floodTr = [];
+    etcTr = [];
+
+    fireCountTr = 0;
+    emergentCountTr = 0;
+    quakeCountTr = 0;
+    surviveCountTr = 0;
+    warCountTr = 0;
+    floodCountTr = 0;
+    etcCountTr = 0;
+
+    for(var i = 0; i < list.length; i++) {
+      switch (list[i].type) {
+        case "화재" : fireTr.add(list[i]); 
+         if(list[i].videoComplete == true && list[i].imgComplete) {
+            fireCountTr++;
+         }
+        case "응급" : emergentTr.add(list[i]); 
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            emergentCountTr++;
+          }
+        case "지진" : quakeTr.add(list[i]);
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            quakeCountTr++;
+          }
+        case "생존" : surviveTr.add(list[i]); 
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            surviveCountTr++;
+          }
+        case "전쟁" : warTr.add(list[i]); 
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            warCountTr++;
+          }
+        case "수해" : floodTr.add(list[i]);
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            floodCountTr++;
+          }
+        case "기타" : etcTr.add(list[i]); 
+          if(list[i].videoComplete == true && list[i].imgComplete) {
+            etcCountTr++;
+          }
+      } 
+    }
+
+    fireCountTrCk = (fireCountTr / fireTr.length).round() * 100;
+    emergentCountTrCk = (emergentCountTr / emergentTr.length).round() * 100;
+    quakeCountTrCk = (quakeCountTr / quakeTr.length).round() * 100;
+    surviveCountTrCk = (surviveCountTr / surviveTr.length).round() * 100;
+    warCountTrCk = (warCountTr / warTr.length).round() * 100;
+    floodCountTrCk = (floodCountTr / floodTr.length).round() * 100;
+    etcCountTrCk = (etcCountTr / etcTr.length).round() * 100;
+}
+
+void text(trainCount) async {
+    if(trainCount! == 0) {
+      textA = "";
+      textB = "모든 훈련을 ";
+      textC = "이수완료 ";
+      textD = "했습니다.";
+      textE = "";
+
+      colorB = Colors.grey.shade600;
+      colorC = Colors.green;
+      colorD = Colors.grey.shade600;
+    } else if (trainCount! > 0) {
+      textA = "총 ";
+      textB = "$trainCount";
+      textC = "개의 훈련이 ";
+      textD = "미이수";
+      textE = " 상태입니다.";
+
+      colorB = Colors.red;
+      colorD = Colors.red;
+    } 
+  }
+
+  Future<void> initTr() async {
+    print("initTr함수 시작");
+
+    final storage = FlutterSecureStorage();
+    String? trainStorage = await storage.read(key: 'Category_Train');
+    if(trainStorage == null || trainStorage == "") { 
+      trainCategories = ["전체", "화재", "응급", "지진", "생존", "전쟁", "수해", "기타"];
+      await storage.write(key: 'Category_Train', value: jsonEncode(trainCategories));
+    } else {
+      trainCategories = jsonDecode(trainStorage!);
+    }
+
+    if(selectedCategoryTr == null || selectedCategoryTr == "") {
+      selectedCategoryTr = trainCategories[0];
+    } else {
+      if (trainCategories.contains(selectedCategoryTr) == false) {
+        selectedCategoryTr = trainCategories[0];
+      }
+    }
+  }
+
+//////////////////////////////////////////////////////////////////////////
+
 
 double appBarHeight = 70;
 double mediaHeight(BuildContext context, double scale) =>
@@ -283,6 +561,8 @@ class checkTool {
   }
 }
 
+  int? realTool;
+  int? realTrain;
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.changeIndex});
@@ -293,6 +573,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  // @override
+  // bool get wantKeepAlive => true;
+
   late Future<Score> futureScore;
   late Future<List<familyScore>> futureFamilyScore;
 
@@ -328,7 +611,6 @@ class _HomePageState extends State<HomePage> {
           String? exp = queryParameters['exp'];
 
           importTool tool = importTool(toolId, mfd, exp, null, null, null, null);
-          print("000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000");
           print(tool);
 
           try {
@@ -372,30 +654,21 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
+    initTest++;
+    print(initTest);
+  
     super.initState();
     initUniLinks();
+    loadCategory = init();
+    
+    futureDefaultTool = loadDefaultTool();
+    futureCustomTool = loadCustomTool();
+
     futureScore = loadScore();
     futureFamilyScore = loadFamilyScore();
 
-    loadCategory = init();
-    futureDefaultTool = loadDefaultTool();
-    futureCustomTool = loadCustomTool();
-  }
-
-  Future<void> init() async {
-    String? toolStorage = await storage.read(key: 'Category_Tool');
-
-    if(toolStorage == null || toolStorage == "") {
-      toolCategories = ["전체", "화재", "응급", "지진", "생존", "전쟁", "수해", "기타"];
-      await storage.write(key: 'Category_Tool', value: jsonEncode(toolCategories));
-    } else {
-      toolCategories = jsonDecode(toolStorage!);
-    }
-
-    if(selectedCategory == null || selectedCategory == "") {
-      selectedCategory = toolCategories[0];
-    } else {
-    }
+    loadCategoryTr = initTr();
+    futureTrainList = loadTrainList();
   }
 
   @override
@@ -430,58 +703,47 @@ class _HomePageState extends State<HomePage> {
                   if (snapshot.hasError)
                     return Text('${snapshot.error}');
                   else if (snapshot.hasData) {
+                    realTool = snapshot.data?.toolScore;
+                    realTrain = snapshot.data?.trainScore;
+
                     return Column(
                       children: <Widget>[
-                        Container(
-                          height: mediaHeight(context, 0.1),
-                          child: Stack(
-                            children: [
-                              Positioned(
-                                left: 5,
-                                bottom: 0,
-                                child: Image.asset(
-                                  'assets/image/eliblogo.png',
-                                  width: mediaWidth(context, 0.3),
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20, right: 20),
+                          child: Container(
+                            height: mediaHeight(context, 0.1),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                 Image.asset(
+                                    'assets/image/eliblogo.png',
+                                    width: mediaWidth(context, 0.15),
+                                  ),
+                        
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.notifications_none_outlined,
+                                    size: 30,
+                                    color: Color.fromRGBO(66, 66, 66, 1)
+                                  ),
+                                  onPressed: () {
+                                    
+                                  },
                                 ),
-                              ),
-                              Center(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    Container(
-                                      width: mediaWidth(context, 1),
-                                      child:
-                                          Text('안녕하세요, ${snapshot.data?.name}님',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                color: Colors.green,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                              textAlign: TextAlign.center),
-                                    ),
-                                    Container(
-                                      width: mediaWidth(context, 1),
-                                      child: Text(' 오늘의 우리집 안전점수는?',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            color: Colors.grey,
-                                          ),
-                                          textAlign: TextAlign.center),
-                                    ),
-                                  ],
-                                ),
-                              )
-                            ],
+                              ]
+                            )
                           ),
                         ),
-                        SizedBox(height: mediaHeight(context, 0.03)),
+                        //SizedBox(height: mediaHeight(context, 0.03)),
+
+
                         Column(
                           children: [
                             //그래프
                             SafetyScoreBox(
                               totalScore: snapshot.data?.totalScore,
                               oldTotalScore: snapshot.data?.oldTotalScore,
+                              name : snapshot.data?.name,
                             ),
 
                             ToolScoreBox(
@@ -490,7 +752,7 @@ class _HomePageState extends State<HomePage> {
                               changeIndex: widget.changeIndex,
                             ),
 
-                            SizedBox(height: mediaHeight(context, 0.03)),
+                            //SizedBox(height: mediaHeight(context, 0.03)),
 
                             TrainingScoreBox(
                               trainScore: snapshot.data?.trainScore,
@@ -498,7 +760,19 @@ class _HomePageState extends State<HomePage> {
                               changeIndex: widget.changeIndex,
                             ),
 
-                            SizedBox(height: mediaHeight(context, 0.03)),
+                            SizedBox(height: mediaHeight(context, 0.05)),
+
+                            ToolBox(
+                              changeIndex: widget.changeIndex,
+                            ),
+
+                            SizedBox(height: mediaHeight(context, 0.05)),
+
+                            TrainBox(
+                              changeIndex: widget.changeIndex,
+                            ),
+
+                            SizedBox(height: mediaHeight(context, 0.05)),
 
                             FutureBuilder<List<familyScore>>(
                                 future: futureFamilyScore,
@@ -560,6 +834,7 @@ class _ToolScoreBoxState extends State<ToolScoreBox>
   double newPercentage = 0.0;
   double gapPercentage = 0.0;
   double newgapPercentage = 0.0;
+  int toolScore = 0;
 
   late AnimationController percentageAnimationController;
 
@@ -580,6 +855,7 @@ class _ToolScoreBoxState extends State<ToolScoreBox>
     setState(() {
       percentage = newPercentage;
       newPercentage = (widget.toolScore) / 100;
+      toolScore = widget.toolScore;
 
       double gap = 0.0;
       if (widget.toolScore > widget.oldToolScore) {
@@ -627,14 +903,14 @@ class _ToolScoreBoxState extends State<ToolScoreBox>
       text = "변동 없음";
     } else if (widget.toolScore > widget.oldToolScore) {
       gap = widget.toolScore - widget.oldToolScore;
-      gapNum = "점";
+      gapNum = "";
       gapIcon = "▲";
       gapColor = 0xFF4CAF50; //green
       toolText = "$gap점 상승";
       text = " 상승";
     } else {
       gap = widget.oldToolScore - widget.toolScore;
-      gapNum = "점";
+      gapNum = "";
       gapIcon = "▼";
       gapColor = 0xFFF16969; //pink
       toolText = "$gap점 하락";
@@ -645,99 +921,232 @@ class _ToolScoreBoxState extends State<ToolScoreBox>
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('  재난대비 도구 현황',
-            style: TextStyle(
-              color: Colors.grey,
-              fontSize: 12,
-              //fontWeight: FontWeight.bold,
-            )),
-        SizedBox(height: mediaHeight(context, 0.01)),
         InkWell(
           onTap: () {
             widget.changeIndex(0);
           },
           child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 7.0,
-                    offset: Offset(2, 5), // changes position of shadow
-                  ),
-                ],
-              ),
-              width: mediaWidth(context, 0.95),
-              height: 100,
-              child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-                Expanded(
-                  flex: 2,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.construction,
-                        color: Colors.grey,
-                        size: 60,
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        ' 재난대비 도구 현황',
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+              height: 80,
+              
+              width: mediaWidth(context, 0.9),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+                    Expanded(
+                      flex: 2,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
-                          Text(gapIcon,
-                              style: TextStyle(
-                                  color: Color(toolColor),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)),
-                          PercentScore(
-                              percent: gapPercentage,
-                              color: Color(toolColor),
-                              fontSize: 25.0,
-                              width: 35.0),
-                          Text('$gapNum',
-                              style: TextStyle(
-                                  color: Color(toolColor),
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.bold)),
-                          Text(text,
-                              style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.bold)),
+                          Stack(
+                            children: [
+                              Positioned(
+                                child: Container(
+                                  width: 300,
+                                  height: 70,
+                                  child: Row(children: [
+                                    Container(
+                                      width: 50,
+                                      height: 70,
+                                    ),
+                                    Container(
+                                      width: 250,
+                                      height: 60,
+                                       decoration: BoxDecoration(
+                                          color: Color(safetyColor),
+                                          borderRadius: BorderRadius.only(
+                                            topRight: Radius.circular(30),
+                                            bottomRight: Radius.circular(30))
+                                      ),
+                                      child: Container(
+                                        width: 230,
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.center,
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children:[
+                                            Text(
+                                              '재난대비 도구 점수 변동',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w300
+                                              ),
+                                            ),
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                              children: [
+                                                    Row(
+                                                      children: [
+                                                        Text(gapIcon,
+                                                              style: TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight.bold
+                                                          )),
+                                                      PercentScore(
+                                                        percent: gapPercentage,
+                                                        color: Colors.white,
+                                                        fontSize: 20.0,
+                                                        width: 35.0
+                                                      ),
+                                                      ],
+                                                    ),
+                                                     
+                                                      // 00
+                                              ],
+                                            )
+                                          ]
+                                        )
+                                      )
+                                    )
+                                  ],
+                                  )
+                                )
+                              ),
+
+                              Container(
+                                width: 70,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  border: Border.all(
+                                      color: Color(safetyColor), width: 1.5),
+                                  borderRadius: BorderRadius.circular(20),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.grey.withOpacity(0.5),
+                                      spreadRadius: 2,
+                                      blurRadius: 7.0,
+                                      offset: Offset(
+                                          2, 5), // changes position of shadow
+                                    ),
+                                  ],
+                                ),
+                                child: Icon(
+                                  Icons.construction,
+                                  color: Colors.grey.shade400,
+                                  size: 40,
+                                ),
+                              ),
+                          ]
+                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: PercentScore(
-                      percent: percentage,
-                      color: Color(toolColor),
-                      fontSize: 65.0,
-                      width: 100.0),
-                )
-              ])),
+                    ),
+                    // Expanded(
+                    //   flex: 4,
+                    //   child: Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     mainAxisAlignment: MainAxisAlignment.center,
+                    //     children: [
+                    //       Text(
+                    //         '재난대비 도구 점수 현황',
+                    //         style: TextStyle(
+                    //           fontSize: 15,
+                    //           color: Colors.grey,
+                    //           fontWeight: FontWeight.bold,
+                    //         ),
+                    //       ),
+                    //       Row(
+                    //         crossAxisAlignment: CrossAxisAlignment.start,
+                    //         children: [
+                    //           Text(gapIcon,
+                    //               style: TextStyle(
+                    //                   color: Color(toolColor),
+                    //                   fontSize: 20,
+                    //                   fontWeight: FontWeight.bold)),
+                    //           PercentScore(
+                    //               percent: gapPercentage,
+                    //               color: Color(toolColor),
+                    //               fontSize: 25.0,
+                    //               width: 35.0),
+                    //           Text('$gapNum',
+                    //               style: TextStyle(
+                    //                   color: Color(toolColor),
+                    //                   fontSize: 23,
+                    //                   fontWeight: FontWeight.bold)),
+                    //         ],
+                    //       ),
+                    //     ],
+                    //   ),
+                    // ),
+                    // Expanded(
+                    //   flex: 3,
+                    //   child: PercentScore(
+                    //       percent: percentage,
+                    //       color: Color(toolColor),
+                    //       fontSize: 65.0,
+                    //       width: 100.0),
+                    // )
+                  ]),
+
+                  // Expanded(
+                  //     child: ListView.builder(
+                  //   physics: const NeverScrollableScrollPhysics(),
+                  //   itemCount: 5,
+                  //   itemBuilder: (BuildContext ctx, int idx) {
+                  //     List<List<defaultTool>> toollist = [
+                  //       fire,
+                  //       emergent,
+                  //       quake,
+                  //       survive,
+                  //       war,
+                  //       flood,
+
+                  //     ];
+                  //     return Column(
+                  //       children: [
+                  //         Padding(
+                  //           padding:
+                  //               const EdgeInsets.only(left: 20.0, right: 20),
+                  //           child: Row(
+                  //             children: [
+                  //               Container(
+                  //                 width: 10,
+                  //                 height: 10,
+                  //                 decoration: BoxDecoration(
+                  //                     color: Colors.amber,
+                  //                     shape: BoxShape.circle),
+                  //               ),
+                  //               Padding(
+                  //                 padding: const EdgeInsets.only(left: 5.0),
+                  //                 child: Text(
+                  //                   toolCategories[idx + 1],
+                  //                   style: TextStyle(
+                  //                     fontSize: 15,
+                  //                     color: Colors.grey,
+                  //                     fontWeight: FontWeight.bold,
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //               Expanded(
+                  //                 child: Align(
+                  //                   alignment: Alignment.centerRight,
+                  //                   child: Text(
+                  //                     "${toollist[idx].length} 개",
+                  //                     style: TextStyle(
+                  //                       fontSize: 15,
+                  //                       color: Colors.grey,
+                  //                       fontWeight: FontWeight.bold,
+                  //                     ),
+                  //                   ),
+                  //                 ),
+                  //               ),
+                  //             ],
+                  //           ),
+                  //         ),
+                  //         Divider(
+                  //           thickness: 2,
+                  //           indent: 20,
+                  //           endIndent: 20,
+                  //         )
+                  //       ],
+                  //     );
+                  //   },
+                  // ))
+                ],
+              )),
         ),
       ],
     ));
@@ -768,6 +1177,7 @@ class _TrainingScoreBoxState extends State<TrainingScoreBox>
   double newPercentage = 0.0;
   double gapPercentage = 0.0;
   double newgapPercentage = 0.0;
+  int trainScore = 0;
 
   late AnimationController percentageAnimationController;
 
@@ -788,6 +1198,7 @@ class _TrainingScoreBoxState extends State<TrainingScoreBox>
     setState(() {
       percentage = newPercentage;
       newPercentage = (widget.trainScore) / 100;
+      trainScore = widget.trainScore;
 
       double gap = 0.0;
       if (widget.trainScore > widget.oldTrainScore) {
@@ -829,14 +1240,14 @@ class _TrainingScoreBoxState extends State<TrainingScoreBox>
       text = "변동 없음";
     } else if (widget.trainScore > widget.oldTrainScore) {
       gap = widget.trainScore - widget.oldTrainScore;
-      gapNum = "점";
+      gapNum = "";
       gapIcon = "▲";
       gapColor = 0xFF4CAF50; //green
       trainText = "$gap점 상승";
       text = " 상승";
     } else {
       gap = widget.oldTrainScore - widget.trainScore;
-      gapNum = "점";
+      gapNum = "";
       gapIcon = "▼";
       gapColor = 0xFFF16969; //pink
       trainText = "$gap점 하락";
@@ -847,97 +1258,167 @@ class _TrainingScoreBoxState extends State<TrainingScoreBox>
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('  재난대비 훈련 현황',
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey,
-              //fontWeight: FontWeight.bold,
-            )),
-        SizedBox(height: mediaHeight(context, 0.01)),
         InkWell(
           onTap: () {
             widget.changeIndex(1);
           },
           child: Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                border: Border.all(color: Colors.grey.shade400, width: 1.5),
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.5),
-                    spreadRadius: 2,
-                    blurRadius: 7.0,
-                    offset: Offset(2, 5), // changes position of shadow
-                  ),
-                ],
-              ),
-              width: mediaWidth(context, 0.95),
-              height: 100,
+              width: mediaWidth(context, 0.9),
+              height: 80,
               child: Row(mainAxisAlignment: MainAxisAlignment.start, children: [
                 Expanded(
                   flex: 2,
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
-                    mainAxisAlignment: MainAxisAlignment.center,
+                    mainAxisAlignment: MainAxisAlignment.end,
                     children: [
-                      Icon(
-                        Icons.edit_document,
-                        color: Colors.grey,
-                        size: 60,
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  flex: 4,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        ' 재난대비 훈련 현황',
-                        style: TextStyle(
-                            fontSize: 18,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.bold),
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      Stack(
                         children: [
-                          Text(gapIcon,
-                              style: TextStyle(
-                                  color: Color(trainColor),
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold)),
-                          PercentScore(
-                              percent: gapPercentage,
-                              color: Color(trainColor),
-                              fontSize: 25.0,
-                              width: 35.0),
-                          Text('$gapNum',
-                              style: TextStyle(
-                                  color: Color(trainColor),
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.bold)),
-                          Text(text,
-                              style: TextStyle(
-                                  color: Colors.grey.shade600,
-                                  fontSize: 23,
-                                  fontWeight: FontWeight.bold)),
+                          Container(
+                            width: 300,
+                            height: 70,
+                            child: Row(children: [
+                              Container(
+                                width: 250,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: Color(safetyColor),
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: Radius.circular(30),
+                                      bottomLeft: Radius.circular(30))),
+                                child: Container(
+                                  width: 230,
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.center,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                              '재난대비 훈련 점수 변동',
+                                              style: TextStyle(
+                                                fontSize: 15,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w300
+                                              ),
+                                            ),
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Text(gapIcon,
+                                                              style: TextStyle(
+                                                                  color: Colors.white,
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight.bold
+                                                          )),
+                                                      PercentScore(
+                                                        percent: gapPercentage,
+                                                        color: Colors.white,
+                                                        fontSize: 20.0,
+                                                        width: 35.0
+                                                      ),
+                                              ],
+                                            ),
+
+                                          //  Row(
+                                          //    children: [
+                                          //      Text('${trainScore}점',
+                                          //         style: TextStyle(
+                                          //           color: Colors.white,
+                                          //           fontSize: 17,
+                                          //           )),
+                                          //     ]
+                                          //   )
+                                          ],
+                                        )
+                                    ],
+                                  )
+                                )
+                              ),
+                              Container(
+                                width: 50,
+                                height: 70,
+                              )
+                            ],)
+                          ),
+
+                          Positioned(
+                            right: 0,
+                            child: Container(
+                            width: 70,
+                            height: 70,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(
+                                  color: Color(safetyColor), width: 1.5),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  spreadRadius: 2,
+                                  blurRadius: 7.0,
+                                  offset: Offset(
+                                      2, 5), // changes position of shadow
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.edit_document,
+                              color: Colors.grey.shade400,
+                              size: 40,
+                            ),
+                          ),
+                          ),
                         ],
-                      ),
+                      )
+                      
                     ],
                   ),
                 ),
-                Expanded(
-                  flex: 3,
-                  child: PercentScore(
-                      percent: percentage,
-                      color: Color(trainColor),
-                      fontSize: 65.0,
-                      width: 100.0),
-                )
+                // Expanded(
+                //   flex: 4,
+                //   child: Column(
+                //     crossAxisAlignment: CrossAxisAlignment.start,
+                //     mainAxisAlignment: MainAxisAlignment.center,
+                //     children: [
+                //       Text(
+                //         ' 재난대비 훈련 현황',
+                //         style: TextStyle(
+                //             fontSize: 18,
+                //             color: Colors.grey,
+                //             fontWeight: FontWeight.bold),
+                //       ),
+                //       Row(
+                //         crossAxisAlignment: CrossAxisAlignment.start,
+                //         children: [
+                //           Text(gapIcon,
+                //               style: TextStyle(
+                //                   color: Color(trainColor),
+                //                   fontSize: 20,
+                //                   fontWeight: FontWeight.bold)),
+                //           PercentScore(
+                //               percent: gapPercentage,
+                //               color: Color(trainColor),
+                //               fontSize: 25.0,
+                //               width: 35.0),
+                //           Text('$gapNum',
+                //               style: TextStyle(
+                //                   color: Color(trainColor),
+                //                   fontSize: 23,
+                //                   fontWeight: FontWeight.bold)),
+                //         ],
+                //       ),
+                //     ],
+                //   ),
+                // ),
+                // Expanded(
+                //   flex: 3,
+                //   child: PercentScore(
+                //       percent: percentage,
+                //       color: Color(trainColor),
+                //       fontSize: 65.0,
+                //       width: 100.0),
+                // )
               ])),
         ),
       ],
@@ -961,7 +1442,7 @@ class FamilyScoreBox extends StatelessWidget {
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('  구성원 현황',
+        Text('  구성원 안전진단 현황',
             style: TextStyle(
               color: Colors.grey,
               fontSize: 12,
@@ -985,42 +1466,16 @@ class FamilyScoreBox extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(height: 15),
-              Text('     총 구성원 현황',
-                  style: TextStyle(
-                    color: Colors.grey,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  )),
-              SizedBox(height: 25),
               Padding(
-                padding: const EdgeInsets.only(left: 35, right: 57),
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('이름',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 15,
-                            //fontWeight: FontWeight.bold,
-                          )),
-                      Text('점수',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 15,
-                            //fontWeight: FontWeight.bold,
-                          ))
-                    ]),
+                padding: const EdgeInsets.only(top: 20, left: 20, bottom: 20),
+                child: Text('구성원 안전 현황',
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    )),
               ),
-              SizedBox(height: 5),
-              Padding(
-                padding: const EdgeInsets.only(left: 20, right: 20),
-                child: Container(
-                  color: Colors.grey.shade400,
-                  height: 1.5,
-                ),
-              ),
-              SizedBox(height: 5),
+
               ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
@@ -1029,13 +1484,17 @@ class FamilyScoreBox extends StatelessWidget {
                 itemBuilder: (context, i) {
                   int scoreColor;
                   int? score = list?[i].totalScore;
+                  String scoreText;
 
                   if (score != null && score < 35) {
                     scoreColor = 0xFFF16969; //pink
+                    scoreText = "위험";
                   } else if (score != null && score < 70) {
                     scoreColor = 0xFF6A9DFF; //blue
+                    scoreText = "보통";
                   } else {
                     scoreColor = 0xFF4CAF50; //green
+                    scoreText = "안전";
                   }
 
                   double last = 0;
@@ -1046,30 +1505,50 @@ class FamilyScoreBox extends StatelessWidget {
                     last = 20;
                   }
 
-                  return Column(
+                  return 
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.only(left: 35, right: 55),
+                        padding: const EdgeInsets.only(left: 25, right: 35),
                         child: InkWell(
                           onTap: () {
                             changeIndex(3);
                           },
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text('${list?[i].name}',
-                                  style: TextStyle(
-                                    color: Colors.grey,
-                                    fontSize: 17,
-                                    fontWeight: FontWeight.bold,
-                                  )),
-                              Text('${list?[i].totalScore}',
-                                  style: TextStyle(
-                                    color: Color(scoreColor),
-                                    fontSize: 25,
-                                    fontWeight: FontWeight.bold,
-                                  )),
-                            ],
+                          child: Container(
+                            height: 32,
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                            color: Colors.yellow,
+                                            shape: BoxShape.circle),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 5.0),
+                                      child: Text('${list?[i].name}',
+                                          style: TextStyle(
+                                            color: Colors.grey,
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.bold,
+                                          )),
+                                    ),
+                                  ],
+                                ),
+                                Text('${scoreText}',
+                                    style: TextStyle(
+                                      color: Color(scoreColor),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    )),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -1077,7 +1556,7 @@ class FamilyScoreBox extends StatelessWidget {
                         padding: const EdgeInsets.only(left: 20, right: 20),
                         child: Container(
                           color: Colors.grey.shade400,
-                          height: 1.5,
+                          height: 2,
                         ),
                       ),
                       SizedBox(height: last),
@@ -1098,10 +1577,12 @@ class SafetyScoreBox extends StatefulWidget {
     Key? key,
     required this.totalScore,
     required this.oldTotalScore,
+    required this.name,
   }) : super(key: key);
 
   final totalScore;
   final oldTotalScore;
+  final name;
 
   @override
   State<SafetyScoreBox> createState() => _SafetyScoreBoxState();
@@ -1139,7 +1620,7 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox>
     int oldTotalScore = widget.oldTotalScore;
     String image = "assets/image/firefighter.png";
 
-    int safetyColor;
+    
     String safetyText;
     if (totalScore < 35) {
       safetyColor = 0xFFF16969; //pink
@@ -1167,6 +1648,46 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox>
     return Center(
       child: Column(
         children: [
+
+           Padding(
+            padding: const EdgeInsets.only(left: 30, right: 30),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  //mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Text(
+                      '${widget.name} 님',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.grey.shade600,
+                        //fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: mediaHeight(context, 0.01)),
+                    Text(
+                      '오늘의 우리집 안전점수는',
+                      style: TextStyle(
+                        fontSize: 20,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                ),
+                PercentScore(
+                  percent: percentage,
+                  color: Color(safetyColor),
+                  fontSize: 50.0,
+                  width: 50.0,
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: mediaHeight(context, 0.03)),
+
           SizedBox(
             height: mediaWidth(context, 0.8),
             child: Column(
@@ -1186,91 +1707,447 @@ class _SafetyScoreBoxState extends State<SafetyScoreBox>
               ],
             ),
           ),
-          SizedBox(height: mediaHeight(context, 0.05)),
+          
+          SizedBox(height: mediaHeight(context, 0.01)),
+
           SizedBox(
-            height: 140,
+            height: 30,
             child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                SizedBox(width: mediaWidth(context, 0.07)),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.start,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Row(
                   children: [
-                    Stack(children: [
-                      Container(
-                          width: 100,
-                          height: 35,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(5),
-                            color: Color(safetyColor),
-                          ),
-                          child: Center(
-                            child: Text(
-                              safetyText,
-                              style: TextStyle(
-                                fontSize: 15,
-                                color: Color.fromARGB(255, 255, 255, 255),
-                              ),
-                            ),
-                          )),
-                    ]),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        PercentScore(
-                            percent: percentage,
-                            color: Color(safetyColor),
-                            fontSize: 80.0,
-                            width: 100.0),
-                      ],
-                    ),
-                  ],
-                ),
-                SizedBox(width: mediaWidth(context, 0.08)),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      height: 50,
-                      child: Text(
-                        "$text",
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Color(safetyColor),
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '재난대비 도구 점수  ',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
                       ),
                     ),
-                    Container(
-                      height: 40,
-                      child: Text(
-                        "재난대비 도구 점수 $toolText",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: const Color.fromARGB(255, 133, 133, 133),
-                          //fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    Container(
-                      height: 40,
-                      child: Text(
-                        "재난대비 훈련 점수 $trainText",
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: const Color.fromARGB(255, 133, 133, 133),
-                          //fontWeight: FontWeight.bold,
-                        ),
+                    Text(
+                      '${realTool}점',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
                       ),
                     ),
                   ],
                 ),
-                SizedBox(width: mediaWidth(context, 0.07)),
-              ],
-            ),
-          )
+
+                Row(
+                  children: [
+                    Text(
+                      '재난대비 훈련 점수  ',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      '${realTrain}점',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                  ],
+                )
+            ],)
+          ),
+
+          SizedBox(height: mediaHeight(context, 0.03)),
+
+          // SizedBox(
+          //   height: 140,
+          //   child: Row(
+          //     children: [
+          //       SizedBox(width: mediaWidth(context, 0.07)),
+          //       Column(
+          //         mainAxisAlignment: MainAxisAlignment.start,
+          //         crossAxisAlignment: CrossAxisAlignment.start,
+          //         children: [
+          //           Stack(children: [
+          //             Container(
+          //                 width: 100,
+          //                 height: 35,
+          //                 decoration: BoxDecoration(
+          //                   borderRadius: BorderRadius.circular(5),
+          //                   color: Color(safetyColor),
+          //                 ),
+          //                 child: Center(
+          //                   child: Text(
+          //                     safetyText,
+          //                     style: TextStyle(
+          //                       fontSize: 15,
+          //                       color: Color.fromARGB(255, 255, 255, 255),
+          //                     ),
+          //                   ),
+          //                 )),
+          //           ]),
+          //           Row(
+          //             mainAxisAlignment: MainAxisAlignment.center,
+          //             children: [
+          //               PercentScore(
+          //                   percent: percentage,
+          //                   color: Color(safetyColor),
+          //                   fontSize: 80.0,
+          //                   width: 100.0),
+          //             ],
+          //           ),
+          //         ],
+          //       ),
+          //       SizedBox(width: mediaWidth(context, 0.08)),
+          //       Column(
+          //         crossAxisAlignment: CrossAxisAlignment.start,
+          //         children: [
+          //           Container(
+          //             height: 50,
+          //             child: Text(
+          //               "$text",
+          //               style: TextStyle(
+          //                 fontSize: 20,
+          //                 color: Color(safetyColor),
+          //                 fontWeight: FontWeight.bold,
+          //               ),
+          //             ),
+          //           ),
+          //           Container(
+          //             height: 40,
+          //             child: Text(
+          //               "재난대비 도구 점수 $toolText",
+          //               style: TextStyle(
+          //                 fontSize: 16,
+          //                 color: const Color.fromARGB(255, 133, 133, 133),
+          //                 //fontWeight: FontWeight.bold,
+          //               ),
+          //             ),
+          //           ),
+          //           Container(
+          //             height: 40,
+          //             child: Text(
+          //               "재난대비 훈련 점수 $trainText",
+          //               style: TextStyle(
+          //                 fontSize: 16,
+          //                 color: const Color.fromARGB(255, 133, 133, 133),
+          //                 //fontWeight: FontWeight.bold,
+          //               ),
+          //             ),
+          //           ),
+          //         ],
+          //       ),
+          //       SizedBox(width: mediaWidth(context, 0.07)),
+          //     ],
+          //   ),
+          // )
         ],
       ),
+    );
+  }
+}
+
+class ToolBox extends StatelessWidget {
+  const ToolBox({
+    Key? key,
+    this.changeIndex,
+  }) : super(key: key);
+
+  final changeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('  재난키트 보유 현황',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+            )),
+        SizedBox(height: mediaHeight(context, 0.01)),
+
+        Container(     
+          width: mediaWidth(context, 0.95),
+          decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(
+                                          color: Colors.grey.shade400, width: 1.5),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.5),
+                                          spreadRadius: 2,
+                                          blurRadius: 7.0,
+                                          offset: Offset(
+                                              2, 5), // changes position of shadow
+                                        ),
+                                      ],
+                                    ),
+          child: Container(
+            height: 350,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children:[
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, left: 20, bottom: 20),
+                  child: Text(
+                  '재난키트 현황',
+                  style: TextStyle(
+                      fontSize: 20, 
+                      color: Colors.grey.shade600, 
+                      fontWeight: FontWeight.bold),
+                          ),
+                ),
+          
+                Expanded(
+                  child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 7,
+                          itemBuilder: (BuildContext ctx, int idx) {
+                            List<int> toolItemCount = [
+                              fireCount,
+                              emergentCount,
+                              quakeCount,
+                              surviveCount,
+                              warCount,
+                              floodCount,
+                              etcCount,
+                            ];
+
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(left: 20.0, right: 20, top: 0.5, bottom: 0.5),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                            color: Colors.amber,
+                                            shape: BoxShape.circle),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 5.0),
+                                        child: Text(
+                                          toolCategories[idx + 1],
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Text(
+                                            "${toolItemCount[idx]} 개",
+                                            style: TextStyle(
+                                              fontSize: 15,
+                                              color: Colors.grey,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Divider(
+                                  thickness: 2,
+                                  indent: 20,
+                                  endIndent: 20,
+                                )
+                              ],
+                            );
+                          },
+                        ),
+                )
+              ]
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class TrainBox extends StatelessWidget {
+  const TrainBox({
+    Key? key,
+    this.changeIndex,
+  }) : super(key: key);
+
+  final changeIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('  재난훈련 이수 현황',
+            style: TextStyle(
+              color: Colors.grey,
+              fontSize: 12,
+            )),
+        SizedBox(height: mediaHeight(context, 0.01)),
+
+        Container(     
+          width: mediaWidth(context, 0.95),
+          decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      border: Border.all(
+                                          color: Colors.grey.shade400, width: 1.5),
+                                      borderRadius: BorderRadius.circular(20),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.grey.withOpacity(0.5),
+                                          spreadRadius: 2,
+                                          blurRadius: 7.0,
+                                          offset: Offset(
+                                              2, 5), // changes position of shadow
+                                        ),
+                                      ],
+                                    ),
+          child: Container(
+            height: 350,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children:[
+                Padding(
+                  padding: const EdgeInsets.only(top: 20, left: 20, bottom: 20),
+                  child: Text(
+                  '훈련 이수 현황',
+                  style: TextStyle(
+                      fontSize: 20, 
+                      color: Colors.grey.shade600, 
+                      fontWeight: FontWeight.bold),
+                          ),
+                ),
+          
+                Expanded(
+                  child: ListView.builder(
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: 7,
+                          itemBuilder: (BuildContext ctx, int idx) {
+                            List<int> trainItemCount = [
+                              fireCountTr,
+                              emergentCountTr,
+                              quakeCountTr,
+                              surviveCountTr,
+                              warCountTr,
+                              floodCountTr,
+                              etcCountTr,
+                            ];
+                            List<int> trainAllCount = [
+                              fireTr.length,
+                              emergentTr.length,
+                              quakeTr.length,
+                              surviveTr.length,
+                              warTr.length,
+                              floodTr.length,
+                              etcTr.length,
+                            ];
+                            List<int> trainPercent = [
+                              fireCountTrCk,
+                              emergentCountTrCk,
+                              quakeCountTrCk,
+                              surviveCountTrCk,
+                              warCountTrCk,
+                              floodCountTrCk,
+                              etcCountTrCk,
+                            ];
+
+                            return Column(
+                              children: [
+                                Padding(
+                                  padding:
+                                      const EdgeInsets.only(left: 20.0, right: 20, top: 1, bottom: 1),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 10,
+                                        height: 10,
+                                        decoration: BoxDecoration(
+                                            color: Colors.lime,
+                                            shape: BoxShape.circle),
+                                      ),
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 5.0),
+                                        child: Text(
+                                          trainCategories[idx + 1],
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Align(
+                                          alignment: Alignment.centerRight,
+                                          child: Row(
+                                            mainAxisAlignment: MainAxisAlignment.end,
+                                            children: [
+                                              Text(
+                                                "${trainItemCount[idx]}",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                " / ",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                "${trainAllCount[idx]}",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                " ,  ",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                              Text(
+                                                "${trainPercent[idx]}%",
+                                                style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: Colors.grey,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                Divider(
+                                  thickness: 2,
+                                  indent: 20,
+                                  endIndent: 20,
+                                )
+                              ],
+                            );
+                          },
+                        ),
+                )
+              ]
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
