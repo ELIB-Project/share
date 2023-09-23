@@ -41,64 +41,71 @@ class _BulidBottomAppBarState extends State<BulidBottomAppBar>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: TabBarView(
-        children: [
-          toolManagePage(),
-          trainPage(),
-          HomePage(changeIndex: changeIndex),
-          MemberManagementPage(),
-          PlusPage(
-            title: 'plus',
-          )
-        ],
-        controller: _controller,
-      ),
-      bottomNavigationBar: DefaultTabController(
-        length: 5,
-        child: TabBar(
-          controller: _controller,
-          indicatorWeight: 4,
-          indicatorSize: TabBarIndicatorSize.label,
-          indicatorColor: Colors.green,
-          unselectedLabelColor: Colors.grey,
-          labelColor: Colors.black,
-          unselectedLabelStyle: TextStyle(
-              color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
-          labelStyle: TextStyle(
-              color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
-          tabs: [
-            Tab(
-                icon: Icon(
-                  Icons.construction,
-                  size: iconSize,
-                ),
-                text: "재난키트"),
-            Tab(
-                icon: Icon(
-                  Icons.edit_document,
-                  size: iconSize,
-                ),
-                text: "훈련"),
-            Tab(
-                icon: Icon(
-                  Icons.home,
-                  size: iconSize,
-                ),
-                text: "홈"),
-            Tab(
-                icon: Icon(
-                  Icons.groups,
-                  size: iconSize,
-                ),
-                text: "구성원"),
-            Tab(
-                icon: Icon(
-                  Icons.more_horiz,
-                  size: iconSize,
-                ),
-                text: "더보기"),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+          scaffoldBackgroundColor: Color.fromARGB(255, 250, 250, 250),
+          colorSchemeSeed: Color.fromARGB(0, 241, 241, 241),
+          useMaterial3: true),
+      home: Scaffold(
+        body: TabBarView(
+          children: [
+            toolManagePage(),
+            trainPage(),
+            HomePage(changeIndex: changeIndex),
+            MemberManagementPage(),
+            PlusPage(
+              title: 'plus',
+            )
           ],
+          controller: _controller,
+        ),
+        bottomNavigationBar: DefaultTabController(
+          length: 5,
+          child: TabBar(
+            controller: _controller,
+            indicatorWeight: 4,
+            indicatorSize: TabBarIndicatorSize.label,
+            indicatorColor: Colors.green,
+            unselectedLabelColor: Colors.grey,
+            labelColor: Colors.black,
+            unselectedLabelStyle: TextStyle(
+                color: Colors.grey, fontSize: 11, fontWeight: FontWeight.bold),
+            labelStyle: TextStyle(
+                color: Colors.black, fontSize: 11, fontWeight: FontWeight.bold),
+            tabs: [
+              Tab(
+                  icon: Icon(
+                    Icons.construction,
+                    size: iconSize,
+                  ),
+                  text: "재난키트"),
+              Tab(
+                  icon: Icon(
+                    Icons.edit_document,
+                    size: iconSize,
+                  ),
+                  text: "훈련"),
+              Tab(
+                  icon: Icon(
+                    Icons.home,
+                    size: iconSize,
+                  ),
+                  text: "홈"),
+              Tab(
+                  icon: Icon(
+                    Icons.groups,
+                    size: iconSize,
+                  ),
+                  text: "구성원"),
+              Tab(
+                  icon: Icon(
+                    Icons.more_horiz,
+                    size: iconSize,
+                  ),
+                  text: "더보기"),
+            ],
+          ),
         ),
       ),
     );
